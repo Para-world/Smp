@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp, slideInRight } from '../utils/animations';
+
 export default function Hero() {
   return (
     <section className="relative overflow-hidden pt-space-xl pb-28 px-margin lg:px-margin-lg">
@@ -5,42 +8,47 @@ export default function Hero() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[520px] bg-gradient-to-tr from-secondary/10 via-secondary-container/10 to-transparent rounded-full blur-3xl pointer-events-none -z-10"></div>
       <div className="absolute top-12 right-10 w-96 h-96 bg-surface-container-high/60 rounded-full blur-2xl pointer-events-none -z-10"></div>
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center overflow-hidden">
           {/* Left Hero Copy */}
-          <div className="lg:col-span-6 flex flex-col items-start gap-space-md">
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="lg:col-span-6 flex flex-col items-start gap-space-md"
+          >
             {/* Release Tag */}
-            <div className="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-surface-container text-on-surface shadow-sm text-label-xs font-semibold">
+            <motion.div variants={fadeInUp} className="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-surface-container text-on-surface shadow-sm text-label-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span className="tracking-wide uppercase">Smarter Student Management • v3.4 Released</span>
-            </div>
+            </motion.div>
             {/* Main Heading */}
-            <h1 className="font-display text-display text-primary leading-tight tracking-tight">
+            <motion.h1 variants={fadeInUp} className="font-display text-display text-primary leading-tight tracking-tight">
               Manage Your Entire{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary via-secondary-container to-blue-500">
                 Student Journey
               </span>{' '}
               in One Place
-            </h1>
+            </motion.h1>
             {/* Supporting Text */}
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+            <motion.p variants={fadeInUp} className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
               From admissions and attendance to assignments, results, communication, and verified transcripts — manage your entire institution with one secure, enterprise-grade digital platform.
-            </p>
+            </motion.p>
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-space-md pt-2">
-              <a className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md shadow-md hover:bg-secondary-container hover:shadow-lg transition-all transform hover:-translate-y-0.5" href="#get-started">
+            <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-space-md pt-2">
+              <motion.a whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md shadow-md hover:bg-secondary-container hover:shadow-lg transition-all" href="#get-started">
                 <span>Get Started Free</span>
                 <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </a>
-              <a className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all" href="#product-cockpit">
+              </motion.a>
+              <motion.a whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all" href="#product-cockpit">
                 <span className="material-symbols-outlined text-secondary text-[20px]">play_circle</span>
                 <span>Explore Platform</span>
-              </a>
-              <a className="inline-flex items-center justify-center px-4 py-3.5 rounded-lg text-on-surface-variant font-label-md text-label-md hover:text-on-surface transition-colors" href="#book-demo">
+              </motion.a>
+              <motion.a whileHover={{ scale: 1.05 }} className="inline-flex items-center justify-center px-4 py-3.5 rounded-lg text-on-surface-variant font-label-md text-label-md hover:text-on-surface transition-colors" href="#book-demo">
                 Book Institutional Demo
-              </a>
-            </div>
+              </motion.a>
+            </motion.div>
             {/* Trust Micro-Banner */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-label-xs font-label-xs text-on-surface-variant">
+            <motion.div variants={fadeInUp} className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-label-xs font-label-xs text-on-surface-variant">
               <span className="inline-flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[16px]">check_circle</span> No credit card required
               </span>
@@ -52,12 +60,21 @@ export default function Hero() {
               <span className="inline-flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[16px]">check_circle</span> Built for modern accreditation
               </span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
           {/* Right Hero Mockup */}
-          <div className="lg:col-span-6 relative mt-6 lg:mt-0">
+          <motion.div 
+            variants={slideInRight}
+            initial="hidden"
+            animate="visible"
+            className="lg:col-span-6 relative mt-6 lg:mt-0"
+          >
             {/* Glassmorphic Floating Pills */}
-            <div className="absolute -top-6 -left-4 z-20 hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-lowest/95 backdrop-blur-md shadow-xl text-label-xs font-semibold text-on-surface animate-bounce" style={{ animationDuration: '4s' }}>
+            <motion.div 
+              animate={{ y: [-10, 10, -10] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="absolute -top-6 -left-4 z-20 hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-lowest/95 backdrop-blur-md shadow-xl text-label-xs font-semibold text-on-surface"
+            >
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                 <span className="material-symbols-outlined text-[16px]">verified</span>
               </div>
@@ -65,7 +82,7 @@ export default function Hero() {
                 <p className="text-primary font-bold">98.4% Attendance Verified</p>
                 <p className="text-on-surface-variant text-[10px] font-normal">Department of Engineering • Live</p>
               </div>
-            </div>
+            </motion.div>
             <div className="absolute -bottom-6 -left-2 z-20 hidden sm:flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-surface-container-lowest/95 backdrop-blur-md shadow-xl text-label-xs">
               <span className="material-symbols-outlined text-secondary text-[20px]">assignment_turned_in</span>
               <div>
@@ -163,7 +180,7 @@ export default function Hero() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

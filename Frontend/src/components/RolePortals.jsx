@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp, hoverElevate } from '../utils/animations';
+
 const experiences = [
   {
     icon: 'school', badge: 'Self-Service Portal', title: 'Student Experience',
@@ -78,14 +81,32 @@ export default function RolePortals() {
   return (
     <section className="py-24 px-margin lg:px-margin-lg" id="role-portals">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeInUp}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Tailored Portals</span>
           <h2 className="font-headline-lg text-headline-lg text-primary mt-2">One Platform. Three Powerful Experiences.</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">Built with deliberate workflows customized for every stakeholder across your institution.</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter-lg">
+        </motion.div>
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-gutter-lg"
+        >
           {experiences.map((exp) => (
-            <div key={exp.title} className="p-7 rounded-2xl bg-surface-container-lowest shadow-lg flex flex-col justify-between">
+            <motion.div 
+              variants={fadeInUp}
+              whileHover="hover"
+              custom={hoverElevate}
+              key={exp.title} 
+              className="p-7 rounded-2xl bg-surface-container-lowest shadow-lg flex flex-col justify-between group cursor-pointer"
+            >
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
@@ -104,13 +125,13 @@ export default function RolePortals() {
                 </ul>
                 {exp.preview}
               </div>
-              <a className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg bg-surface-container text-secondary font-label-md hover:bg-secondary hover:text-on-secondary transition-all" href={exp.href}>
+              <a className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg bg-surface-container text-secondary font-label-md group-hover:bg-secondary group-hover:text-on-secondary transition-all" href={exp.href}>
                 <span>{exp.cta}</span>
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </a>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { slideInLeft, slideInRight, staggerContainer, fadeInUp } from '../utils/animations';
+
 const securityFeatures = [
   { icon: 'verified_user', label: 'FERPA & GDPR Compliant' },
   { icon: 'security', label: 'SOC-2 Type II Certified' },
@@ -10,8 +13,14 @@ export default function Security() {
     <section className="py-24 bg-surface-container-low px-margin lg:px-margin-lg">
       <div className="max-w-7xl mx-auto">
         <div className="p-10 lg:p-14 rounded-3xl bg-surface-container-lowest shadow-xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center">
-            <div className="lg:col-span-7 flex flex-col gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center overflow-hidden">
+            <motion.div 
+              variants={slideInLeft}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              className="lg:col-span-7 flex flex-col gap-4"
+            >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-label-xs font-bold w-fit">
                 <span className="material-symbols-outlined text-[16px]">lock</span>
                 <span>Enterprise Grade Security</span>
@@ -26,8 +35,14 @@ export default function Security() {
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="lg:col-span-5 flex items-center justify-center">
+            </motion.div>
+            <motion.div 
+              variants={slideInRight}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.3 }}
+              className="lg:col-span-5 flex items-center justify-center"
+            >
               <div className="w-64 h-64 rounded-full bg-surface-container flex flex-col items-center justify-center relative p-6 text-center shadow-inner">
                 <span className="material-symbols-outlined text-secondary text-[64px] animate-pulse">shield</span>
                 <span className="font-headline-sm text-headline-sm text-primary font-bold mt-2">Zero-Trust</span>
@@ -36,7 +51,7 @@ export default function Security() {
                   <span className="material-symbols-outlined text-[16px]">check</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

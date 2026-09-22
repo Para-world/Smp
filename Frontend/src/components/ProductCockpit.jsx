@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp } from '../utils/animations';
+
 const students = [
   { initials: 'AM', name: 'Alexander Mitchell', email: 'alex.m@univ.edu', id: 'EDU-8821', program: 'B.Sc. Computer Science', attendance: '96.8%', attColor: 'text-emerald-600', gpa: '3.92', standing: 'Good Standing', standingBg: 'bg-emerald-100 text-emerald-700', avatarBg: 'bg-secondary-fixed text-on-secondary-fixed' },
   { initials: 'SL', name: 'Sarah Lin', email: 's.lin@univ.edu', id: 'EDU-9043', program: 'M.Sc. Artificial Intelligence', attendance: '98.2%', attColor: 'text-emerald-600', gpa: '4.00', standing: "Dean's Honor", standingBg: 'bg-secondary-fixed text-on-secondary-fixed', avatarBg: 'bg-surface-container-high text-primary' },
@@ -26,12 +29,24 @@ export default function ProductCockpit() {
   return (
     <section className="py-24 bg-surface-container-low px-margin lg:px-margin-lg" id="product-cockpit">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeInUp}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Intuitive Interface</span>
           <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Everything at a glance.</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">Experience the lightning-fast, high-density institutional cockpit engineered for zero distraction.</p>
-        </div>
-        <div className="w-full bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden">
+        </motion.div>
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={fadeInUp}
+          className="w-full bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden"
+        >
           {/* App Navigation Header Bar */}
           <div className="flex flex-wrap items-center justify-between px-6 py-4 bg-surface-container">
             <div className="flex items-center gap-4">
@@ -76,15 +91,21 @@ export default function ProductCockpit() {
             </div>
             {/* Main Workspace */}
             <div className="lg:col-span-10 p-6 flex flex-col gap-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div 
+                variants={staggerContainer} 
+                initial="hidden" 
+                whileInView="visible" 
+                viewport={{ once: true }} 
+                className="grid grid-cols-2 md:grid-cols-4 gap-4"
+              >
                 {cockpitStats.map((stat) => (
-                  <div key={stat.label} className="bg-surface-container-low p-4 rounded-xl">
+                  <motion.div variants={fadeInUp} key={stat.label} className="bg-surface-container-low p-4 rounded-xl">
                     <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">{stat.label}</span>
                     <p className="font-headline-md text-headline-md text-primary font-bold mt-1">{stat.value}</p>
                     <span className={`text-[11px] ${stat.trendColor} font-semibold`}>{stat.trend}</span>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
               {/* Data Table */}
               <div className="overflow-x-auto">
                 <div className="flex items-center justify-between pb-3">
@@ -102,9 +123,15 @@ export default function ProductCockpit() {
                       <th className="py-2.5 px-4 rounded-r-lg">Standing</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-surface-container-low">
+                  <motion.tbody 
+                    variants={staggerContainer} 
+                    initial="hidden" 
+                    whileInView="visible" 
+                    viewport={{ once: true }} 
+                    className="divide-y divide-surface-container-low"
+                  >
                     {students.map((s) => (
-                      <tr key={s.id} className="hover:bg-surface-container-low/50 transition-colors">
+                      <motion.tr variants={fadeInUp} key={s.id} className="hover:bg-surface-container-low/50 transition-colors">
                         <td className="py-3 px-4 flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full ${s.avatarBg} font-bold flex items-center justify-center text-xs`}>{s.initials}</div>
                           <div>
@@ -119,14 +146,14 @@ export default function ProductCockpit() {
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-0.5 rounded-full ${s.standingBg} text-[11px] font-semibold`}>{s.standing}</span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
-                  </tbody>
+                  </motion.tbody>
                 </table>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

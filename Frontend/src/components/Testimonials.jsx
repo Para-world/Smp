@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp, hoverElevate } from '../utils/animations';
+
 const testimonials = [
   {
     quote: '\u201CEduSphere completely modernized our term registration and grading pipeline. The registrar team saved over 140 hours in the first month alone, and parent inquiries dropped dramatically.\u201D',
@@ -20,14 +23,32 @@ export default function Testimonials() {
   return (
     <section className="py-24 px-margin lg:px-margin-lg">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeInUp}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Institutional Impact</span>
           <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Loved by educators, administrators, and students</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">See how leading institutions transformed their operational agility with EduSphere.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter-lg">
+        </motion.div>
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-gutter-lg"
+        >
           {testimonials.map((t) => (
-            <div key={t.name} className="p-8 rounded-2xl bg-surface-container-lowest shadow-md flex flex-col justify-between">
+            <motion.div 
+              variants={fadeInUp}
+              whileHover="hover"
+              custom={hoverElevate}
+              key={t.name} 
+              className="p-8 rounded-2xl bg-surface-container-lowest shadow-md flex flex-col justify-between cursor-pointer"
+            >
               <div>
                 <div className="flex items-center gap-1 text-amber-500 mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -43,9 +64,9 @@ export default function Testimonials() {
                   <p className="font-body-sm text-body-sm text-on-surface-variant">{t.role}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeInUp } from '../utils/animations';
 
 const faqItems = [
   { q: 'What is EduSphere?', a: 'EduSphere is a next-generation cloud-native Student Information System (SIS) and Academic Governance platform designed for modern higher education institutions, universities, and polytechnics. It unifies attendance, admissions, assignments, grading, transcripts, parent notifications, and fiscal tracking under one cohesive cockpit.' },
@@ -21,14 +23,30 @@ export default function FAQ() {
   return (
     <section className="py-24 px-margin lg:px-margin-lg" id="faq">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeInUp}
+          className="text-center mb-16"
+        >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Frequently Asked Questions</span>
           <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Everything you need to know about EduSphere</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">Got additional questions? Our academic engineering specialists are always on standby.</p>
-        </div>
-        <div className="flex flex-col gap-3">
+        </motion.div>
+        <motion.div 
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          className="flex flex-col gap-3"
+        >
           {faqItems.map((item, i) => (
-            <div key={i} className={`rounded-xl shadow-sm transition-all overflow-hidden ${openIndex === i ? 'bg-surface-container-lowest shadow-md' : 'bg-surface-container-low'}`}>
+            <motion.div 
+              variants={fadeInUp}
+              key={i} 
+              className={`rounded-xl shadow-sm transition-all overflow-hidden ${openIndex === i ? 'bg-surface-container-lowest shadow-md' : 'bg-surface-container-low hover:bg-surface-container-low/80'}`}
+            >
               <button
                 className="w-full px-6 py-4 flex items-center justify-between text-left font-headline-sm text-label-md text-primary font-semibold"
                 type="button"
@@ -42,14 +60,22 @@ export default function FAQ() {
                   expand_more
                 </span>
               </button>
-              {openIndex === i && (
-                <div className="px-6 pb-4 font-body-sm text-body-sm text-on-surface-variant">
-                  {item.a}
-                </div>
-              )}
-            </div>
+              <AnimatePresence>
+                {openIndex === i && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="px-6 pb-4 font-body-sm text-body-sm text-on-surface-variant"
+                  >
+                    {item.a}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

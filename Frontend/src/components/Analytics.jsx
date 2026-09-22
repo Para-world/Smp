@@ -1,22 +1,41 @@
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeInUp, slideInLeft, slideInRight } from '../utils/animations';
+
 export default function Analytics() {
   return (
     <section className="py-24 bg-[#0B1120] text-white px-margin lg:px-margin-lg relative overflow-hidden" id="analytics">
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center">
-          <div className="lg:col-span-5 flex flex-col items-start gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center overflow-hidden">
+          <motion.div 
+            variants={slideInLeft}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            className="lg:col-span-5 flex flex-col items-start gap-4"
+          >
             <span className="px-3 py-1 rounded-full bg-blue-900/60 text-cyan-300 text-label-xs font-bold uppercase tracking-wider">Smart Predictive Analytics</span>
             <h2 className="font-display text-display font-bold leading-tight">Turn student data into actionable academic insights.</h2>
             <p className="font-body-lg text-body-lg text-slate-400">Detect academic drop-off risks early, monitor curriculum efficacy, and forecast enrollment trends before semesters begin with our proprietary retention intelligence engine.</p>
             <div className="pt-2 flex items-center gap-3">
-              <button className="px-5 py-3 rounded-lg bg-secondary text-white font-label-md text-label-md hover:bg-secondary-container transition-colors shadow-lg flex items-center gap-2">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-5 py-3 rounded-lg bg-secondary text-white font-label-md text-label-md hover:bg-secondary-container transition-colors shadow-lg flex items-center gap-2"
+              >
                 <span className="material-symbols-outlined text-[18px]">download</span>
                 <span>Export Accreditation Report</span>
-              </button>
+              </motion.button>
             </div>
-          </div>
-          <div className="lg:col-span-7 flex flex-col gap-4">
+          </motion.div>
+          <motion.div 
+            variants={slideInRight}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            className="lg:col-span-7 flex flex-col gap-4"
+          >
             {/* Retention Watchlist */}
             <div className="p-5 rounded-2xl bg-slate-900/90 shadow-2xl backdrop-blur-md">
               <div className="flex items-center justify-between pb-3">
@@ -67,20 +86,32 @@ export default function Analytics() {
                     <span>STEM Faculty</span>
                     <span className="font-bold">96.8%</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-cyan-400 h-1.5 rounded-full" style={{ width: '96.8%' }}></div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      whileInView={{ width: '96.8%' }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                      className="bg-cyan-400 h-1.5 rounded-full"
+                    ></motion.div>
                   </div>
                   <div className="flex justify-between text-[11px] text-slate-300 pt-1">
                     <span>Humanities</span>
                     <span className="font-bold">92.4%</span>
                   </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '92.4%' }}></div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      whileInView={{ width: '92.4%' }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+                      className="bg-blue-500 h-1.5 rounded-full"
+                    ></motion.div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

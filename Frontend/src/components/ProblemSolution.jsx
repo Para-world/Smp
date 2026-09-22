@@ -14,11 +14,20 @@ const solutions = [
   'One-click verifiable official e-transcripts and predictive retention indicators flagging at-risk coursework.',
 ];
 
+import { motion } from 'framer-motion';
+import { slideInLeft, slideInRight, fadeInUp } from '../utils/animations';
+
 export default function ProblemSolution() {
   return (
     <section className="py-24 px-margin lg:px-margin-lg">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={fadeInUp}
+          className="text-center max-w-3xl mx-auto mb-16"
+        >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Operational Shift</span>
           <h2 className="font-headline-lg text-headline-lg text-primary mt-2">
             Managing students shouldn&apos;t be complicated.
@@ -26,10 +35,16 @@ export default function ProblemSolution() {
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">
             Traditional academic operations are siloed, manual, and error-prone. EduSphere bridges every administrative and educational touchpoint into a unified, high-speed digital cockpit.
           </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter-lg">
+        </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter-lg overflow-hidden">
           {/* Legacy Side */}
-          <div className="p-8 rounded-2xl bg-surface-container-low shadow-sm flex flex-col gap-space-md">
+          <motion.div 
+            variants={slideInLeft}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            className="p-8 rounded-2xl bg-surface-container-low shadow-sm flex flex-col gap-space-md"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-error/10 text-error flex items-center justify-center">
                 <span className="material-symbols-outlined text-[24px]">cancel</span>
@@ -47,9 +62,15 @@ export default function ProblemSolution() {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
           {/* Solution Side */}
-          <div className="p-8 rounded-2xl bg-surface-container-lowest shadow-xl flex flex-col gap-space-md relative overflow-hidden">
+          <motion.div 
+            variants={slideInRight}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            className="p-8 rounded-2xl bg-surface-container-lowest shadow-xl flex flex-col gap-space-md relative overflow-hidden"
+          >
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -68,7 +89,7 @@ export default function ProblemSolution() {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

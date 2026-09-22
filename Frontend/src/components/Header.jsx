@@ -1,4 +1,4 @@
-const LOGO_SRC = "https://lh3.googleusercontent.com/aida/AEtjO1UFYJXx9o0R8jnpmzAgzWdpimzM0EXlB3cowedx_rNltMjRfeAKaYKNAz6OVMUW97I5uh7onjxr8gHYf8n8BW8WC46rtsp5b8pcMKjsGTBeuWNFwstPodPdS8dfvB0ubvhn6Lf-sy4pOfbUI88swifaQuGsqwefkCk9-zlWpr0MDXDVONM1_PJveRIwZ6ntt-HdhXO2fSYgHLnfVQXC-RQDEOR7-2Klox7vCoqrwsoQDqe9o1ggRmom1DY";
+import LOGO_SRC from '../assets/logo.png';
 
 export default function Header() {
   return (

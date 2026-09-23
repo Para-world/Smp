@@ -10,7 +10,7 @@ const stakeholders = [
 
 export default function StakeholderValue() {
   return (
-    <section className="py-24 bg-surface-container-low px-margin lg:px-margin-lg">
+    <section className="py-24 bg-surface-container-low dark:bg-[#0B1120] px-margin lg:px-margin-lg transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           initial="hidden"
@@ -20,8 +20,8 @@ export default function StakeholderValue() {
           className="text-center max-w-2xl mx-auto mb-16"
         >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Holistic Impact</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Built for everyone in your institution</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Every persona gains dedicated tools engineered to remove friction and heighten focus.</p>
+          <h2 className="font-display text-headline-lg text-slate-900 dark:text-white mt-2 font-bold tracking-tight transition-colors">Built for everyone in your institution</h2>
+          <p className="font-body-md text-body-md text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">Every persona gains dedicated tools engineered to remove friction and heighten focus.</p>
         </motion.div>
         <motion.div 
           variants={staggerContainer}
@@ -36,16 +36,16 @@ export default function StakeholderValue() {
               whileHover="hover"
               custom={hoverElevate}
               key={s.title} 
-              className="p-6 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col justify-between cursor-pointer"
+              className="p-6 rounded-2xl bg-white dark:bg-[#050811] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] dark:shadow-none flex flex-col justify-between cursor-pointer transition-colors duration-300"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-cyan-900/30 text-secondary dark:text-cyan-400 flex items-center justify-center mb-4 transition-colors">
                   <span className="material-symbols-outlined text-[20px]">{s.icon}</span>
                 </div>
-                <h3 className="font-headline-sm text-headline-sm text-primary">{s.title}</h3>
-                <blockquote className="font-body-sm text-body-sm text-on-surface-variant italic mt-3">{s.quote}</blockquote>
+                <h3 className="font-display text-headline-sm text-slate-900 dark:text-white font-bold transition-colors">{s.title}</h3>
+                <blockquote className="font-body-sm text-body-sm text-slate-500 dark:text-slate-400 italic mt-3 transition-colors">{s.quote}</blockquote>
               </div>
-              <p className="text-label-xs font-semibold text-secondary pt-4">{s.metric}</p>
+              <p className="text-label-xs font-semibold text-secondary dark:text-cyan-400 pt-4 transition-colors">{s.metric}</p>
             </motion.div>
           ))}
         </motion.div>

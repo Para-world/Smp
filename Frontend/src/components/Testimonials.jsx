@@ -31,8 +31,8 @@ export default function Testimonials() {
           className="text-center max-w-2xl mx-auto mb-16"
         >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Institutional Impact</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Loved by educators, administrators, and students</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">See how leading institutions transformed their operational agility with EduSphere.</p>
+          <h2 className="font-display text-headline-lg text-slate-900 dark:text-white mt-2 font-bold tracking-tight transition-colors">Loved by educators, administrators, and students</h2>
+          <p className="font-body-md text-body-md text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">See how leading institutions transformed their operational agility with EduSphere.</p>
         </motion.div>
         <motion.div 
           variants={staggerContainer}
@@ -47,21 +47,21 @@ export default function Testimonials() {
               whileHover="hover"
               custom={hoverElevate}
               key={t.name} 
-              className="p-8 rounded-2xl bg-surface-container-lowest shadow-md flex flex-col justify-between cursor-pointer"
+              className="p-8 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none flex flex-col justify-between cursor-pointer transition-colors duration-300"
             >
               <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-4">
+                <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 mb-4 transition-colors">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="material-symbols-outlined text-[18px]">star</span>
                   ))}
                 </div>
-                <p className="font-body-md text-body-md text-primary italic">{t.quote}</p>
+                <p className="font-body-md text-body-md text-slate-800 dark:text-slate-300 italic leading-relaxed transition-colors">{t.quote}</p>
               </div>
-              <div className="flex items-center gap-3 pt-6">
+              <div className="flex items-center gap-3 pt-6 mt-4 border-t border-slate-100 dark:border-slate-800 transition-colors">
                 <div className={`w-10 h-10 rounded-full ${t.avatarBg} font-bold flex items-center justify-center text-xs`}>{t.initials}</div>
                 <div>
-                  <p className="font-headline-sm text-label-md text-primary font-bold">{t.name}</p>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{t.role}</p>
+                  <p className="font-headline-sm text-label-md text-slate-900 dark:text-white font-bold transition-colors">{t.name}</p>
+                  <p className="font-body-sm text-body-sm text-slate-500 dark:text-slate-400 transition-colors">{t.role}</p>
                 </div>
               </div>
             </motion.div>

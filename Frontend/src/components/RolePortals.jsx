@@ -12,17 +12,17 @@ const experiences = [
       'Virtual student identity pass with Apple/Google Wallet',
     ],
     preview: (
-      <div className="p-4 rounded-xl bg-surface-container-low mb-6">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-transparent dark:border-slate-700/30 mb-6 transition-colors">
         <div className="flex items-center justify-between text-label-xs">
-          <span className="font-semibold text-primary">Next Class: Machine Learning</span>
+          <span className="font-semibold text-slate-900 dark:text-white transition-colors">Next Class: Machine Learning</span>
           <span className="text-secondary font-bold">10:30 AM</span>
         </div>
         <div className="flex items-center justify-between mt-3 pt-2">
           <div>
-            <p className="text-[11px] text-on-surface-variant">Cumulative GPA</p>
-            <p className="font-bold text-primary text-headline-sm">3.88 <span className="text-[11px] text-on-surface-variant font-normal">/ 4.0</span></p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 transition-colors">Cumulative GPA</p>
+            <p className="font-bold text-slate-900 dark:text-white text-headline-sm transition-colors">3.88 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal transition-colors">/ 4.0</span></p>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-label-xs font-semibold">Dean&apos;s Honor</span>
+          <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-label-xs font-semibold transition-colors">Dean&apos;s Honor</span>
         </div>
       </div>
     ),
@@ -38,16 +38,16 @@ const experiences = [
       'Early warning flags for struggling students',
     ],
     preview: (
-      <div className="p-4 rounded-xl bg-surface-container-low mb-6">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-transparent dark:border-slate-700/30 mb-6 transition-colors">
         <div className="flex items-center justify-between text-label-xs mb-2">
-          <span className="font-semibold text-primary">CS-401 Distributed Systems</span>
-          <span className="text-on-surface-variant">Midterm Exam</span>
+          <span className="font-semibold text-slate-900 dark:text-white transition-colors">CS-401 Distributed Systems</span>
+          <span className="text-slate-500 dark:text-slate-400 transition-colors">Midterm Exam</span>
         </div>
-        <div className="w-full bg-surface-container-highest rounded-full h-2 mb-2">
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2 transition-colors">
           <div className="bg-secondary h-2 rounded-full" style={{ width: '93%' }}></div>
         </div>
         <div className="flex items-center justify-between text-[11px]">
-          <span className="text-on-surface-variant">42 of 45 graded</span>
+          <span className="text-slate-500 dark:text-slate-400 transition-colors">42 of 45 graded</span>
           <span className="text-secondary font-bold cursor-pointer hover:underline">Bulk Publish Results</span>
         </div>
       </div>
@@ -64,13 +64,13 @@ const experiences = [
       'Instant government accreditation exports',
     ],
     preview: (
-      <div className="p-4 rounded-xl bg-surface-container-low mb-6">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-transparent dark:border-slate-700/30 mb-6 transition-colors">
         <div className="flex items-center justify-between text-label-xs">
-          <span className="text-on-surface-variant">Fall Tuition Collection</span>
-          <span className="text-emerald-600 font-bold">93.3% Reconciled</span>
+          <span className="text-slate-500 dark:text-slate-400 transition-colors">Fall Tuition Collection</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-bold transition-colors">93.3% Reconciled</span>
         </div>
-        <p className="font-headline-sm text-primary font-bold mt-1">$4.2M <span className="text-on-surface-variant text-[11px] font-normal">/ $4.5M projected</span></p>
-        <div className="mt-2 text-[10px] text-on-surface-variant">Faculty Retention Rate: <strong className="text-primary font-semibold">97.4%</strong></div>
+        <p className="font-headline-sm text-slate-900 dark:text-white font-bold mt-1 transition-colors">$4.2M <span className="text-slate-500 dark:text-slate-400 text-[11px] font-normal transition-colors">/ $4.5M projected</span></p>
+        <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400 transition-colors">Faculty Retention Rate: <strong className="text-slate-900 dark:text-white font-semibold transition-colors">97.4%</strong></div>
       </div>
     ),
     cta: 'Explore Admin Console', href: '#admin-console',
@@ -89,8 +89,8 @@ export default function RolePortals() {
           className="text-center max-w-2xl mx-auto mb-16"
         >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Tailored Portals</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">One Platform. Three Powerful Experiences.</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Built with deliberate workflows customized for every stakeholder across your institution.</p>
+          <h2 className="font-display text-headline-lg text-slate-900 dark:text-white mt-2 font-bold tracking-tight transition-colors">One Platform. Three Powerful Experiences.</h2>
+          <p className="font-body-md text-body-md text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">Built with deliberate workflows customized for every stakeholder across your institution.</p>
         </motion.div>
         <motion.div 
           variants={staggerContainer}
@@ -105,18 +105,18 @@ export default function RolePortals() {
               whileHover="hover"
               custom={hoverElevate}
               key={exp.title} 
-              className="p-7 rounded-2xl bg-surface-container-lowest shadow-lg flex flex-col justify-between group cursor-pointer"
+              className="p-7 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none flex flex-col justify-between group cursor-pointer transition-colors duration-300"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-50 dark:bg-cyan-900/20 text-secondary flex items-center justify-center transition-colors">
                     <span className="material-symbols-outlined text-[26px]">{exp.icon}</span>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-label-xs font-semibold bg-secondary-fixed text-on-secondary-fixed">{exp.badge}</span>
+                  <span className="px-3 py-1 rounded-full text-label-xs font-semibold bg-slate-100 dark:bg-cyan-900/30 text-slate-600 dark:text-cyan-400 transition-colors">{exp.badge}</span>
                 </div>
-                <h3 className="font-headline-md text-headline-md text-primary">{exp.title}</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">{exp.desc}</p>
-                <ul className="flex flex-col gap-2.5 my-6 text-body-sm text-on-surface">
+                <h3 className="font-display text-headline-md text-slate-900 dark:text-white font-bold tracking-tight transition-colors">{exp.title}</h3>
+                <p className="font-body-sm text-body-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">{exp.desc}</p>
+                <ul className="flex flex-col gap-2.5 my-6 text-body-sm text-slate-700 dark:text-slate-300 transition-colors">
                   {exp.features.map((feat) => (
                     <li key={feat} className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-secondary text-[18px]">check</span> {feat}
@@ -125,7 +125,7 @@ export default function RolePortals() {
                 </ul>
                 {exp.preview}
               </div>
-              <a className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg bg-surface-container text-secondary font-label-md group-hover:bg-secondary group-hover:text-on-secondary transition-all" href={exp.href}>
+              <a className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-cyan-400 font-label-md group-hover:bg-secondary group-hover:border-secondary dark:group-hover:bg-secondary dark:group-hover:border-secondary group-hover:text-white transition-all" href={exp.href}>
                 <span>{exp.cta}</span>
                 <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
               </a>

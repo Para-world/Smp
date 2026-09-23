@@ -3,9 +3,9 @@ import { staggerContainer, fadeInUp, slideInLeft, slideInRight } from '../utils/
 
 export default function Analytics() {
   return (
-    <section className="py-24 bg-[#0B1120] text-white px-margin lg:px-margin-lg relative overflow-hidden" id="analytics">
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <section className="py-24 bg-[#050811] text-white px-margin lg:px-margin-lg relative overflow-hidden" id="analytics">
+      <div className="absolute -top-32 -left-32 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-center overflow-hidden">
           <motion.div 
@@ -20,9 +20,9 @@ export default function Analytics() {
             <p className="font-body-lg text-body-lg text-slate-400">Detect academic drop-off risks early, monitor curriculum efficacy, and forecast enrollment trends before semesters begin with our proprietary retention intelligence engine.</p>
             <div className="pt-2 flex items-center gap-3">
               <motion.button 
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(56,189,248,0.3)" }}
                 whileTap={{ scale: 0.95 }}
-                className="px-5 py-3 rounded-lg bg-secondary text-white font-label-md text-label-md hover:bg-secondary-container transition-colors shadow-lg flex items-center gap-2"
+                className="px-5 py-3 rounded-lg bg-gradient-to-r from-secondary to-blue-500 text-white font-label-md text-label-md transition-all shadow-lg flex items-center gap-2 font-bold border border-white/10"
               >
                 <span className="material-symbols-outlined text-[18px]">download</span>
                 <span>Export Accreditation Report</span>
@@ -37,8 +37,9 @@ export default function Analytics() {
             className="lg:col-span-7 flex flex-col gap-4"
           >
             {/* Retention Watchlist */}
-            <div className="p-5 rounded-2xl bg-slate-900/90 shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between pb-3">
+            <div className="p-6 rounded-2xl bg-[#0B1120]/80 border border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+              <div className="flex items-center justify-between pb-4 relative z-10">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-amber-400 text-[22px]">warning</span>
                   <span className="text-label-md font-bold text-white">Automated Retention Watchlist</span>
@@ -57,8 +58,9 @@ export default function Analytics() {
             </div>
             {/* Metrics Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-slate-900/90 shadow-xl flex flex-col justify-between">
-                <div>
+              <div className="p-6 rounded-2xl bg-[#0B1120]/80 border border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between backdrop-blur-xl group relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10">
                   <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Campus Retention Rate</span>
                   <div className="flex items-baseline gap-2 mt-2">
                     <span className="font-display text-headline-lg font-bold text-white">97.2%</span>
@@ -73,8 +75,9 @@ export default function Analytics() {
                   <span className="text-[10px] text-slate-400 block pt-1">4-Year Cohort Longevity</span>
                 </div>
               </div>
-              <div className="p-5 rounded-2xl bg-slate-900/90 shadow-xl flex flex-col justify-between">
-                <div>
+              <div className="p-6 rounded-2xl bg-[#0B1120]/80 border border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between backdrop-blur-xl group relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative z-10">
                   <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Curricular Efficacy Index</span>
                   <div className="flex items-baseline gap-2 mt-2">
                     <span className="font-display text-headline-lg font-bold text-white">94.6</span>

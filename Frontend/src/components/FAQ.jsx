@@ -31,8 +31,8 @@ export default function FAQ() {
           className="text-center mb-16"
         >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Frequently Asked Questions</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Everything you need to know about EduSphere</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Got additional questions? Our academic engineering specialists are always on standby.</p>
+          <h2 className="font-display text-headline-lg text-slate-900 dark:text-white mt-2 font-bold tracking-tight transition-colors">Everything you need to know about EduSphere</h2>
+          <p className="font-body-md text-body-md text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">Got additional questions? Our academic engineering specialists are always on standby.</p>
         </motion.div>
         <motion.div 
           variants={staggerContainer}
@@ -45,10 +45,10 @@ export default function FAQ() {
             <motion.div 
               variants={fadeInUp}
               key={i} 
-              className={`rounded-xl shadow-sm transition-all overflow-hidden ${openIndex === i ? 'bg-surface-container-lowest shadow-md' : 'bg-surface-container-low hover:bg-surface-container-low/80'}`}
+              className={`border rounded-xl transition-all overflow-hidden ${openIndex === i ? 'bg-white dark:bg-[#0B1120] border-slate-200 dark:border-slate-700 shadow-md dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)]' : 'bg-slate-50 hover:bg-white dark:bg-slate-800/40 dark:hover:bg-slate-800 border-transparent dark:border-slate-700/50 shadow-sm'}`}
             >
               <button
-                className="w-full px-6 py-4 flex items-center justify-between text-left font-headline-sm text-label-md text-primary font-semibold"
+                className="w-full px-6 py-4 flex items-center justify-between text-left font-display text-label-md text-slate-900 dark:text-white font-bold transition-colors"
                 type="button"
                 onClick={() => toggle(i)}
               >
@@ -67,7 +67,7 @@ export default function FAQ() {
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="px-6 pb-4 font-body-sm text-body-sm text-on-surface-variant"
+                    className="px-6 pb-4 font-body-sm text-body-sm text-slate-600 dark:text-slate-400 leading-relaxed transition-colors"
                   >
                     {item.a}
                   </motion.div>

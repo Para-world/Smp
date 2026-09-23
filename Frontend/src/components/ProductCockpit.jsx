@@ -27,7 +27,7 @@ const cockpitStats = [
 
 export default function ProductCockpit() {
   return (
-    <section className="py-24 bg-surface-container-low px-margin lg:px-margin-lg" id="product-cockpit">
+    <section className="py-24 bg-[#050811] px-margin lg:px-margin-lg" id="product-cockpit">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           initial="hidden"
@@ -36,37 +36,37 @@ export default function ProductCockpit() {
           variants={fadeInUp}
           className="text-center max-w-2xl mx-auto mb-16"
         >
-          <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Intuitive Interface</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">Everything at a glance.</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">Experience the lightning-fast, high-density institutional cockpit engineered for zero distraction.</p>
+          <span className="font-label-xs text-label-xs uppercase tracking-wider text-cyan-400 font-bold">Intuitive Interface</span>
+          <h2 className="font-display text-headline-lg text-white mt-2 font-bold tracking-tight">Everything at a glance.</h2>
+          <p className="font-body-md text-body-md text-slate-400 mt-2 leading-relaxed">Experience the lightning-fast, high-density institutional cockpit engineered for zero distraction.</p>
         </motion.div>
         <motion.div 
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           variants={fadeInUp}
-          className="w-full bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden"
+          className="w-full bg-[#0B1120] border border-slate-800 rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
         >
           {/* App Navigation Header Bar */}
-          <div className="flex flex-wrap items-center justify-between px-6 py-4 bg-surface-container">
+          <div className="flex flex-wrap items-center justify-between px-6 py-4 bg-[#0B1120] border-b border-slate-800">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-red-400"></span>
-                <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                <span className="w-3 h-3 rounded-full bg-emerald-400"></span>
+                <span className="w-3 h-3 rounded-full bg-slate-700 hover:bg-red-500 transition-colors cursor-pointer"></span>
+                <span className="w-3 h-3 rounded-full bg-slate-700 hover:bg-amber-500 transition-colors cursor-pointer"></span>
+                <span className="w-3 h-3 rounded-full bg-slate-700 hover:bg-emerald-500 transition-colors cursor-pointer"></span>
               </div>
               <div className="relative hidden sm:block">
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant absolute left-3 top-2.5">search</span>
-                <input className="bg-surface-container-lowest pl-9 pr-12 py-1.5 rounded-lg text-body-sm text-on-surface focus:outline-none w-72 shadow-sm" placeholder="Search students, courses, or IDs (Cmd+K)..." readOnly type="text" />
-                <kbd className="absolute right-2.5 top-2 px-1.5 py-0.5 rounded bg-surface-container-low text-[10px] text-on-surface-variant font-mono">⌘K</kbd>
+                <span className="material-symbols-outlined text-[18px] text-slate-500 absolute left-3 top-2.5">search</span>
+                <input className="bg-slate-800/50 border border-slate-700/50 pl-9 pr-12 py-1.5 rounded-lg text-body-sm text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors w-72 shadow-inner" placeholder="Search students, courses, or IDs (Cmd+K)..." readOnly type="text" />
+                <kbd className="absolute right-2.5 top-2 px-1.5 py-0.5 rounded bg-slate-700 text-[10px] text-slate-300 font-mono border border-slate-600">⌘K</kbd>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-surface-container-lowest px-3 py-1.5 rounded-lg text-label-xs font-semibold text-primary flex items-center gap-1.5 shadow-sm">
-                <span className="material-symbols-outlined text-[16px] text-secondary">calendar_month</span>
+              <div className="bg-slate-800/50 border border-slate-700/50 px-3 py-1.5 rounded-lg text-label-xs font-semibold text-slate-200 flex items-center gap-1.5 shadow-sm">
+                <span className="material-symbols-outlined text-[16px] text-cyan-400">calendar_month</span>
                 <span>Semester: Fall 2026</span>
               </div>
-              <button className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-on-secondary text-label-xs font-semibold shadow-sm hover:bg-secondary-container transition-colors">
+              <button className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-label-xs font-semibold shadow-sm hover:bg-cyan-500/20 transition-colors">
                 <span className="material-symbols-outlined text-[16px]">add</span>
                 <span>Enroll Student</span>
               </button>
@@ -99,9 +99,10 @@ export default function ProductCockpit() {
                 className="grid grid-cols-2 md:grid-cols-4 gap-4"
               >
                 {cockpitStats.map((stat) => (
-                  <motion.div variants={fadeInUp} key={stat.label} className="bg-surface-container-low p-4 rounded-xl">
-                    <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">{stat.label}</span>
-                    <p className="font-headline-md text-headline-md text-primary font-bold mt-1">{stat.value}</p>
+                  <motion.div variants={fadeInUp} key={stat.label} className="bg-slate-800/30 border border-slate-700/50 p-4 rounded-xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-cyan-500/10 transition-colors"></div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{stat.label}</span>
+                    <p className="font-display text-headline-md text-white font-bold mt-1 tracking-tight">{stat.value}</p>
                     <span className={`text-[11px] ${stat.trendColor} font-semibold`}>{stat.trend}</span>
                   </motion.div>
                 ))}
@@ -109,18 +110,18 @@ export default function ProductCockpit() {
               {/* Data Table */}
               <div className="overflow-x-auto">
                 <div className="flex items-center justify-between pb-3">
-                  <span className="font-headline-sm text-headline-sm text-primary">Recent Student Enrollments</span>
-                  <span className="text-label-xs text-secondary font-semibold hover:underline cursor-pointer">View Complete Roster (2,840) →</span>
+                  <span className="font-display text-headline-sm text-white font-semibold">Recent Student Enrollments</span>
+                  <span className="text-label-xs text-cyan-400 font-semibold hover:underline cursor-pointer">View Complete Roster (2,840) →</span>
                 </div>
                 <table className="w-full text-left text-body-sm">
                   <thead>
-                    <tr className="bg-surface-container text-on-surface-variant font-label-xs uppercase text-[11px]">
-                      <th className="py-2.5 px-4 rounded-l-lg">Student Profile</th>
-                      <th className="py-2.5 px-4">Student ID</th>
-                      <th className="py-2.5 px-4">Academic Program</th>
-                      <th className="py-2.5 px-4">Attendance</th>
-                      <th className="py-2.5 px-4">Term GPA</th>
-                      <th className="py-2.5 px-4 rounded-r-lg">Standing</th>
+                    <tr className="bg-slate-800/50 text-slate-400 font-label-xs uppercase text-[11px] border-y border-slate-800">
+                      <th className="py-2.5 px-4 font-semibold">Student Profile</th>
+                      <th className="py-2.5 px-4 font-semibold">Student ID</th>
+                      <th className="py-2.5 px-4 font-semibold">Academic Program</th>
+                      <th className="py-2.5 px-4 font-semibold">Attendance</th>
+                      <th className="py-2.5 px-4 font-semibold">Term GPA</th>
+                      <th className="py-2.5 px-4 font-semibold">Standing</th>
                     </tr>
                   </thead>
                   <motion.tbody 
@@ -128,21 +129,21 @@ export default function ProductCockpit() {
                     initial="hidden" 
                     whileInView="visible" 
                     viewport={{ once: true }} 
-                    className="divide-y divide-surface-container-low"
+                    className="divide-y divide-slate-800/50"
                   >
                     {students.map((s) => (
-                      <motion.tr variants={fadeInUp} key={s.id} className="hover:bg-surface-container-low/50 transition-colors">
+                      <motion.tr variants={fadeInUp} key={s.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="py-3 px-4 flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full ${s.avatarBg} font-bold flex items-center justify-center text-xs`}>{s.initials}</div>
                           <div>
-                            <p className="font-semibold text-primary">{s.name}</p>
-                            <p className="text-[11px] text-on-surface-variant">{s.email}</p>
+                            <p className="font-semibold text-slate-200">{s.name}</p>
+                            <p className="text-[11px] text-slate-500">{s.email}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono text-xs text-on-surface-variant">{s.id}</td>
-                        <td className="py-3 px-4 text-on-surface">{s.program}</td>
+                        <td className="py-3 px-4 font-mono text-xs text-slate-400">{s.id}</td>
+                        <td className="py-3 px-4 text-slate-300">{s.program}</td>
                         <td className={`py-3 px-4 font-semibold ${s.attColor}`}>{s.attendance}</td>
-                        <td className="py-3 px-4 font-bold text-primary">{s.gpa}</td>
+                        <td className="py-3 px-4 font-bold text-white">{s.gpa}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2.5 py-0.5 rounded-full ${s.standingBg} text-[11px] font-semibold`}>{s.standing}</span>
                         </td>

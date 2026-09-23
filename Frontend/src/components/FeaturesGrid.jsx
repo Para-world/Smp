@@ -14,7 +14,7 @@ const features = [
 
 export default function FeaturesGrid() {
   return (
-    <section className="py-24 bg-surface-container-low px-margin lg:px-margin-lg" id="features">
+    <section className="py-24 bg-slate-50 dark:bg-[#050811] px-margin lg:px-margin-lg relative transition-colors duration-300" id="features">
       <div className="max-w-7xl mx-auto">
         <motion.div 
           initial="hidden"
@@ -24,10 +24,10 @@ export default function FeaturesGrid() {
           className="text-center max-w-2xl mx-auto mb-16"
         >
           <span className="font-label-xs text-label-xs uppercase tracking-wider text-secondary font-bold">Platform Capabilities</span>
-          <h2 className="font-headline-lg text-headline-lg text-primary mt-2">
+          <h2 className="font-display text-headline-lg text-slate-900 dark:text-white mt-2 font-bold tracking-tight transition-colors">
             Everything you need to manage your institution
           </h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+          <p className="font-body-md text-body-md text-slate-500 dark:text-slate-400 mt-2 leading-relaxed transition-colors">
             Powerful, intuitive tools designed specifically for students, academic faculty, and university leadership.
           </p>
         </motion.div>
@@ -44,15 +44,15 @@ export default function FeaturesGrid() {
               whileHover="hover"
               custom={hoverElevate}
               key={f.title} 
-              className="p-6 rounded-2xl bg-surface-container-lowest shadow-sm flex flex-col justify-between group cursor-pointer"
+              className="p-6 rounded-2xl bg-white dark:bg-[#0B1120] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] dark:shadow-none flex flex-col justify-between group cursor-pointer transition-all hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] dark:hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1"
             >
               <div>
-                <div className="w-12 h-12 rounded-xl bg-surface-container text-secondary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 text-secondary flex items-center justify-center mb-4 group-hover:scale-105 transition-all border border-slate-100 dark:border-slate-700/50">
                   <span className="material-symbols-outlined text-[26px]">{f.icon}</span>
                 </div>
                 <span className="text-label-xs font-label-xs text-secondary font-bold uppercase tracking-wide">{f.tag}</span>
-                <h3 className="font-headline-sm text-headline-sm text-primary mt-1 mb-2">{f.title}</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{f.desc}</p>
+                <h3 className="font-display text-headline-sm text-slate-900 dark:text-white font-bold mt-1 mb-2 tracking-tight transition-colors">{f.title}</h3>
+                <p className="font-body-sm text-body-sm text-slate-500 dark:text-slate-400 leading-relaxed transition-colors">{f.desc}</p>
               </div>
               <div className="pt-4 flex items-center text-label-xs font-semibold text-secondary group-hover:gap-2 transition-all">
                 <span>Learn more</span>

@@ -61,7 +61,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res: Response): Promise
     const [course] = await db
       .select()
       .from(courses)
-      .where(eq(courses.id, id))
+      .where(eq(courses.id, String(id)))
       .limit(1);
 
     if (!course) {
@@ -111,8 +111,8 @@ router.post("/:id/enroll", requireAuth, async (req: AuthRequest, res: Response):
       .from(enrollments)
       .where(
         and(
-          eq(enrollments.studentId, studentId),
-          eq(enrollments.courseId, courseId),
+          eq(enrollments.studentId, String(studentId)),
+          eq(enrollments.courseId, String(courseId)),
           eq(enrollments.status, "enrolled")
         )
       )
@@ -125,7 +125,7 @@ router.post("/:id/enroll", requireAuth, async (req: AuthRequest, res: Response):
 
     const [enrollment] = await db
       .insert(enrollments)
-      .values({ studentId, courseId })
+      .values({ studentId: String(studentId), courseId: String(courseId) })
       .returning();
 
     res.status(201).json({ enrollment });

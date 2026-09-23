@@ -52,7 +52,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res: Response): Promise
         createdAt: users.createdAt,
       })
       .from(users)
-      .where(eq(users.id, id))
+      .where(eq(users.id, String(id)))
       .limit(1);
 
     if (!user) {

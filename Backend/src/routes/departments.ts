@@ -47,7 +47,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res: Response): Promise
     const [department] = await db
       .select()
       .from(departments)
-      .where(eq(departments.id, id))
+      .where(eq(departments.id, String(id)))
       .limit(1);
 
     if (!department) {

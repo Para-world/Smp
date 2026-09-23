@@ -1,6 +1,6 @@
 import { createHmac, randomBytes } from "crypto";
 
-const SECRET = process.env.BETTER_AUTH_SECRET || "fallback-secret-change-me";
+const SECRET = process.env.JWT_SECRET || process.env.BETTER_AUTH_SECRET || "fallback-secret-change-me";
 const TOKEN_EXPIRY_HOURS = 24;
 
 interface TokenPayload {

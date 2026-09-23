@@ -22,7 +22,7 @@ router.get("/request/:requestId", async (req: Request, res: Response): Promise<v
         expiresAt: deviceLoginRequests.expiresAt,
       })
       .from(deviceLoginRequests)
-      .where(eq(deviceLoginRequests.requestId, requestId))
+      .where(eq(deviceLoginRequests.requestId, String(requestId)))
       .limit(1);
 
     if (!request) {
@@ -55,7 +55,7 @@ router.post("/verify", verificationRateLimiter, async (req: Request, res: Respon
     const [request] = await db
       .select()
       .from(deviceLoginRequests)
-      .where(eq(deviceLoginRequests.requestId, body.requestId))
+      .where(eq(deviceLoginRequests.requestId, String(body.requestId)))
       .limit(1);
 
     if (!request) {
@@ -81,7 +81,7 @@ router.post("/verify", verificationRateLimiter, async (req: Request, res: Respon
     }
 
     // Verify the code
-    const valid = await compare(body.code, request.codeHash);
+    const valid = await compare(body.code, request.codeHash as string);
     if (!valid) {
       await db
         .update(deviceLoginRequests)
@@ -184,8 +184,8 @@ router.delete("/devices/:deviceId", requireAuth, async (req: AuthRequest, res: R
       .set({ trusted: false, revokedAt: new Date() })
       .where(
         and(
-          eq(trustedDevices.deviceId, deviceId),
-          eq(trustedDevices.userId, req.user!.userId)
+          eq(trustedDevices.deviceId, String(deviceId)),
+          eq(trustedDevices.userId, String(req.user!.userId))
         )
       );
 

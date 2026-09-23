@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AuthContext = createContext(null);
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

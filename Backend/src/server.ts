@@ -8,6 +8,7 @@ import userRoutes from "./routes/users.js";
 import courseRoutes from "./routes/courses.js";
 import departmentRoutes from "./routes/departments.js";
 import deviceRoutes from "./routes/device.js";
+import studentRoutes from "./routes/student.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -39,6 +40,7 @@ app.use("/api/auth/device", deviceRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/student", studentRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 

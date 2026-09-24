@@ -68,7 +68,7 @@ export default function SocialProof() {
             transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
           >
             {[...institutions, ...institutions].map((inst, idx) => (
-              <div key={`${inst.name}-${idx}`} className="flex shrink-0 items-center gap-2 font-display text-headline-sm font-bold tracking-tighter text-on-surface dark:text-slate-400 grayscale hover:grayscale-0 dark:opacity-60 dark:hover:opacity-100 transition-all cursor-pointer whitespace-nowrap">
+              <div key={`${inst.name}-${idx}`} className="flex shrink-0 min-w-max items-center gap-2 font-display text-headline-sm font-bold tracking-tighter text-on-surface dark:text-slate-400 grayscale hover:grayscale-0 dark:opacity-60 dark:hover:opacity-100 transition-all cursor-pointer whitespace-nowrap">
                 <span className="material-symbols-outlined text-secondary text-[26px]">{inst.icon}</span>
                 <span>{inst.name}</span>
               </div>

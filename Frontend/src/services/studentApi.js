@@ -200,3 +200,31 @@ export async function fetchTimetable(filters = {}) {
 
   return res.json();
 }
+
+export async function fetchExams(filters = {}) {
+  const query = new URLSearchParams(filters).toString();
+  const url = query ? `${API_URL}/student/exams?${query}` : `${API_URL}/student/exams`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load exams');
+  }
+
+  return res.json();
+}
+
+export async function fetchExamDetail(examId) {
+  const res = await fetch(`${API_URL}/student/exams/${examId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load exam details');
+  }
+
+  return res.json();
+}

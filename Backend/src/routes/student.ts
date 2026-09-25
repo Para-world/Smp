@@ -17,6 +17,7 @@ import {
   departments,
   submissions,
   classSchedules,
+  exams,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
@@ -348,6 +349,25 @@ router.get(
         }
       }
 
+      // ── 10. Upcoming Exams ──────────────────────────────────────────────
+      let upcomingExams: any[] = [];
+      if (courseIds.length > 0) {
+        upcomingExams = await db
+          .select({
+            id: exams.id,
+            title: exams.title,
+            courseTitle: courses.title,
+            date: exams.date,
+            startTime: exams.startTime,
+            venue: exams.venue,
+          })
+          .from(exams)
+          .innerJoin(courses, eq(exams.courseId, courses.id))
+          .where(and(inArray(exams.courseId, courseIds), gte(exams.date, new Date())))
+          .orderBy(exams.date)
+          .limit(3);
+      }
+
       // ── Response ───────────────────────────────────────────────────────
       res.json({
         student: {
@@ -372,6 +392,7 @@ router.get(
         upcomingClasses,
         announcements: relevantAnnouncements,
         pendingAssignmentsList,
+        upcomingExams,
         semesterProgress,
         activeSemester: activeSemester
           ? {
@@ -524,6 +545,27 @@ router.get(
           )
         )
         .orderBy(desc(assignments.dueDate));
+
+      // Fetch upcoming exams
+      const upcomingExams = await db
+        .select({
+          id: exams.id,
+          title: exams.title,
+          examType: exams.examType,
+          date: exams.date,
+          startTime: exams.startTime,
+          endTime: exams.endTime,
+          venue: exams.venue,
+        })
+        .from(exams)
+        .where(
+          and(
+            eq(exams.courseId, courseId),
+            gte(exams.date, new Date())
+          )
+        )
+        .orderBy(exams.date)
+        .limit(3);
         
       res.json({ 
         course: {
@@ -531,7 +573,8 @@ router.get(
             enrollmentStatus: enrollment.status,
             enrolledAt: enrollment.enrolledAt,
         },
-        assignments: courseAssignments
+        assignments: courseAssignments,
+        upcomingExams: upcomingExams
       });
     } catch (error) {
       console.error("Fetch course details error:", error);
@@ -1423,6 +1466,127 @@ router.get(
       res.json(schedules);
     } catch (error) {
       console.error("Fetch timetable error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/exams ──────────────────────────────────────────────────
+router.get(
+  "/exams",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      
+      const studentEnrollments = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      if (courseIds.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      const allExams = await db
+        .select({
+          id: exams.id,
+          title: exams.title,
+          description: exams.description,
+          examType: exams.examType,
+          date: exams.date,
+          startTime: exams.startTime,
+          endTime: exams.endTime,
+          durationMinutes: exams.durationMinutes,
+          venue: exams.venue,
+          building: exams.building,
+          floor: exams.floor,
+          instructions: exams.instructions,
+          status: exams.status,
+          isOnline: exams.isOnline,
+          examUrl: exams.examUrl,
+          originalDate: exams.originalDate,
+          cancellationReason: exams.cancellationReason,
+          courseId: exams.courseId,
+          courseTitle: courses.title,
+          courseCode: courses.code,
+        })
+        .from(exams)
+        .innerJoin(courses, eq(exams.courseId, courses.id))
+        .where(inArray(exams.courseId, courseIds))
+        .orderBy(exams.date);
+
+      res.json(allExams);
+    } catch (error) {
+      console.error("Fetch exams error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/exams/:examId ──────────────────────────────────────────
+router.get(
+  "/exams/:examId",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const { examId } = req.params;
+
+      const studentEnrollments = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      if (courseIds.length === 0) {
+        res.status(403).json({ error: "Not enrolled in the related course." });
+        return;
+      }
+
+      const [exam] = await db
+        .select({
+          id: exams.id,
+          title: exams.title,
+          description: exams.description,
+          examType: exams.examType,
+          date: exams.date,
+          startTime: exams.startTime,
+          endTime: exams.endTime,
+          durationMinutes: exams.durationMinutes,
+          venue: exams.venue,
+          building: exams.building,
+          floor: exams.floor,
+          instructions: exams.instructions,
+          status: exams.status,
+          isOnline: exams.isOnline,
+          examUrl: exams.examUrl,
+          originalDate: exams.originalDate,
+          cancellationReason: exams.cancellationReason,
+          courseId: exams.courseId,
+          courseTitle: courses.title,
+          courseCode: courses.code,
+          facultyName: users.name,
+        })
+        .from(exams)
+        .innerJoin(courses, eq(exams.courseId, courses.id))
+        .leftJoin(users, eq(courses.facultyId, users.id))
+        .where(and(eq(exams.id, examId), inArray(exams.courseId, courseIds)));
+
+      if (!exam) {
+        res.status(404).json({ error: "Exam not found or you are not authorized to view it." });
+        return;
+      }
+
+      res.json(exam);
+    } catch (error) {
+      console.error("Fetch exam error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }

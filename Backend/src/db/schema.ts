@@ -68,6 +68,22 @@ export const classTypeEnum = pgEnum("class_type", [
   "other",
 ]);
 
+export const examTypeEnum = pgEnum("exam_type", [
+  "MID_TERM",
+  "FINAL",
+  "PRACTICAL",
+  "VIVA",
+  "INTERNAL",
+  "QUIZ",
+  "OTHER"
+]);
+
+export const examStatusEnum = pgEnum("exam_status", [
+  "SCHEDULED",
+  "POSTPONED",
+  "CANCELLED"
+]);
+
 export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "APPROVED",
@@ -226,6 +242,33 @@ export const classSchedules = pgTable("class_schedules", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ─── Exams ───────────────────────────────────────────────────────────────────
+
+export const exams = pgTable("exams", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  examType: examTypeEnum("exam_type").notNull().default("MID_TERM"),
+  date: timestamp("date", { withTimezone: true }).notNull(),
+  startTime: varchar("start_time", { length: 8 }).notNull(),
+  endTime: varchar("end_time", { length: 8 }).notNull(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  venue: varchar("venue", { length: 255 }),
+  building: varchar("building", { length: 255 }),
+  floor: varchar("floor", { length: 50 }),
+  instructions: text("instructions"),
+  status: examStatusEnum("status").notNull().default("SCHEDULED"),
+  isOnline: boolean("is_online").notNull().default(false),
+  examUrl: varchar("exam_url", { length: 500 }),
+  originalDate: timestamp("original_date", { withTimezone: true }),
+  cancellationReason: text("cancellation_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Enrollments ─────────────────────────────────────────────────────────────
 
 export const enrollments = pgTable("enrollments", {
@@ -361,6 +404,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   assignments: many(assignments),
   attendance: many(attendance),
   classSchedules: many(classSchedules),
+  exams: many(exams),
 }));
 
 export const enrollmentsRelations = relations(enrollments, ({ one }) => ({
@@ -394,4 +438,8 @@ export const announcementsRelations = relations(announcements, ({ one }) => ({
 export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
   course: one(courses, { fields: [classSchedules.courseId], references: [courses.id] }),
   instructor: one(users, { fields: [classSchedules.instructorId], references: [users.id] }),
+}));
+
+export const examsRelations = relations(exams, ({ one }) => ({
+  course: one(courses, { fields: [exams.courseId], references: [courses.id] }),
 }));

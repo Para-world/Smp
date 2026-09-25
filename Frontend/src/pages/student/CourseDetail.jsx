@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowLeft, BookOpen, Clock, Calendar, GraduationCap, MapPin, CheckCircle2, User, FileText } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookOpen, Clock, Calendar, GraduationCap, MapPin, CheckCircle2, User, FileText, FileCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { fetchStudentCourseDetails } from '../../services/studentApi';
@@ -11,6 +11,7 @@ import StudentHeader from '../../components/student/StudentHeader';
 import CourseDetailSkeleton from '../../components/student/courses/CourseDetailSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const statusColor = {
@@ -244,6 +245,48 @@ export default function CourseDetail() {
                       </CardContent>
                     </Card>
                   </motion.div>
+
+                  {/* Upcoming Exams */}
+                  {data.upcomingExams && data.upcomingExams.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                      <Card className="border-indigo-100 dark:border-indigo-900/50 shadow-sm overflow-hidden">
+                        <div className="bg-indigo-600 dark:bg-indigo-900/50 p-4 text-white">
+                          <h3 className="font-display font-semibold flex items-center gap-2">
+                            <FileCheck size={18} />
+                            Upcoming Exam
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-4 bg-indigo-50/30 dark:bg-indigo-900/10">
+                          {data.upcomingExams.map(exam => (
+                            <div key={exam.id} className="border-b border-indigo-100 dark:border-indigo-800/50 last:border-0 pb-4 last:pb-0">
+                              <p className="font-semibold text-slate-900 dark:text-white mb-1">{exam.title}</p>
+                              <div className="space-y-2 mb-3">
+                                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                  <Calendar size={12} className="text-slate-400" />
+                                  {new Date(exam.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                  <Clock size={12} className="text-slate-400" />
+                                  {exam.startTime}
+                                </div>
+                                {exam.venue && (
+                                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                    <MapPin size={12} className="text-slate-400" />
+                                    {exam.venue}
+                                  </div>
+                                )}
+                              </div>
+                              <Link to={`/student/exams/${exam.id}`}>
+                                <Button size="sm" variant="outline" className="w-full text-xs h-8">
+                                  View Exam
+                                </Button>
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )}
 
                   {/* Information */}
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.25 }}>

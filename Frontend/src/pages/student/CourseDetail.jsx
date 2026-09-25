@@ -186,15 +186,19 @@ export default function CourseDetail() {
                         {assignments.length > 0 ? (
                           <div className="divide-y divide-slate-100 dark:divide-slate-800">
                             {assignments.map(a => (
-                              <div key={a.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                              <Link 
+                                to={`/student/assignments/${a.id}`} 
+                                key={a.id} 
+                                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                              >
                                 <div>
-                                  <h4 className="text-sm font-medium text-slate-900 dark:text-white">{a.title}</h4>
+                                  <h4 className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{a.title}</h4>
                                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                     Due: {a.dueDate ? format(new Date(a.dueDate), 'MMM d, yyyy') : 'No due date'}
                                   </p>
                                 </div>
-                                <Badge variant="outline" className="w-fit text-xs font-mono">{a.maxScore} pts</Badge>
-                              </div>
+                                <Badge variant="outline" className="w-fit text-xs font-mono bg-white dark:bg-slate-900">{a.maxScore} pts</Badge>
+                              </Link>
                             ))}
                           </div>
                         ) : (

@@ -24,6 +24,8 @@ export default function StudentAssignments() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
+  const [sortOption, setSortOption] = useState('dueDateNearest');
 
   const loadAssignments = useCallback(async () => {
     setLoading(true);
@@ -44,13 +46,35 @@ export default function StudentAssignments() {
 
   const assignments = data?.assignments || [];
   const summary = data?.summary || { total: 0, pending: 0, submitted: 0, overdue: 0 };
+  
+  // Get unique courses for the dropdown
+  const uniqueCourses = Array.from(new Set(assignments.map(a => a.courseId))).map(id => {
+    return assignments.find(a => a.courseId === id);
+  });
 
-  const filteredAssignments = assignments.filter((assignment) => {
+  let filteredAssignments = assignments.filter((assignment) => {
     const matchesSearch = 
       assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       assignment.courseCode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || assignment.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCourse = courseFilter === 'all' || assignment.courseId === courseFilter;
+    return matchesSearch && matchesStatus && matchesCourse;
+  });
+
+  // Apply sorting
+  filteredAssignments.sort((a, b) => {
+    if (sortOption === 'dueDateNearest') {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    } else if (sortOption === 'dueDateLatest') {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    } else if (sortOption === 'course') {
+      return a.courseCode.localeCompare(b.courseCode);
+    }
+    return 0;
   });
 
   const getStatusBadge = (status) => {
@@ -155,27 +179,51 @@ export default function StudentAssignments() {
               </div>
 
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="relative w-full sm:max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <Input 
-                    type="text" 
-                    placeholder="Search assignments or courses..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 bg-slate-50 dark:bg-slate-900/50 border-none shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
-                  />
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white dark:bg-slate-900/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <div className="relative w-full sm:max-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <Input 
+                      type="text" 
+                      placeholder="Search..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-10 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                    />
+                  </div>
+                  
+                  <select
+                    className="h-10 px-3 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:max-w-[180px]"
+                    value={courseFilter}
+                    onChange={(e) => setCourseFilter(e.target.value)}
+                  >
+                    <option value="all">All Courses</option>
+                    {uniqueCourses.map(c => (
+                      <option key={c.courseId} value={c.courseId}>{c.courseCode}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="h-10 px-3 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:max-w-[160px]"
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                  >
+                    <option value="dueDateNearest">Due Date (Nearest)</option>
+                    <option value="dueDateLatest">Due Date (Latest)</option>
+                    <option value="course">Course</option>
+                  </select>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
+
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-none shrink-0">
                   {['all', 'pending', 'submitted', 'overdue', 'graded'].map((status) => (
                     <button
                       key={status}
                       onClick={() => setStatusFilter(status)}
                       className={cn(
-                        "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
+                        "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors border",
                         statusFilter === status 
-                          ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" 
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white" 
+                          : "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700"
                       )}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}

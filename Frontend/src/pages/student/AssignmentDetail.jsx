@@ -27,6 +27,7 @@ export default function AssignmentDetail() {
   const [error, setError] = useState(null);
 
   const [submissionText, setSubmissionText] = useState('');
+  const [submissionUrl, setSubmissionUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -36,8 +37,9 @@ export default function AssignmentDetail() {
     try {
       const res = await fetchAssignmentDetails(assignmentId);
       setData(res);
-      if (res.submission?.content) {
-        setSubmissionText(res.submission.content);
+      if (res.submission) {
+        if (res.submission.content) setSubmissionText(res.submission.content);
+        if (res.submission.fileUrl) setSubmissionUrl(res.submission.fileUrl);
       }
     } catch (err) {
       setError(err.message || 'Unable to load assignment details.');
@@ -52,11 +54,14 @@ export default function AssignmentDetail() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!submissionText.trim()) return;
+    if (!submissionText.trim() && !submissionUrl.trim()) return;
 
     setSubmitting(true);
     try {
-      await submitAssignment(assignmentId, { content: submissionText });
+      await submitAssignment(assignmentId, { 
+        content: submissionText,
+        fileUrl: submissionUrl 
+      });
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 3000);
       await loadAssignment(); // Reload to get updated status
@@ -217,27 +222,51 @@ export default function AssignmentDetail() {
                     </CardHeader>
                     <CardContent>
                       {grade ? (
-                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                          <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
-                            {submission?.content || 'No text content.'}
-                          </p>
+                        <div className="space-y-4">
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <p className="text-sm font-medium text-slate-500 mb-2">Text Response:</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                              {submission?.content || 'No text content.'}
+                            </p>
+                          </div>
+                          {submission?.fileUrl && (
+                            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                              <p className="text-sm font-medium text-slate-500 mb-2">Attachment / Link:</p>
+                              <a href={submission.fileUrl} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline break-all">
+                                {submission.fileUrl}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                           <Textarea 
-                            placeholder="Type your submission here, or provide a link to your work..."
-                            className="min-h-[200px] resize-y bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                            placeholder="Type your submission here..."
+                            className="min-h-[160px] resize-y bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                             value={submissionText}
                             onChange={(e) => setSubmissionText(e.target.value)}
                             disabled={submitting}
                           />
-                          <div className="flex items-center justify-between">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              External Link (Optional)
+                            </label>
+                            <input 
+                              type="url"
+                              placeholder="https://github.com/..."
+                              className="w-full h-10 px-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              value={submissionUrl}
+                              onChange={(e) => setSubmissionUrl(e.target.value)}
+                              disabled={submitting}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between pt-2">
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                               {submission ? 'Resubmitting will overwrite your previous work.' : 'Make sure you review your work before submitting.'}
                             </p>
                             <Button 
                               type="submit" 
-                              disabled={!submissionText.trim() || submitting}
+                              disabled={(!submissionText.trim() && !submissionUrl.trim()) || submitting}
                               className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
                             >
                               {submitting ? (

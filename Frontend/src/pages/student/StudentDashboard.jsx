@@ -10,6 +10,7 @@ import DashboardStats from '../../components/student/DashboardStats';
 import QuickActions from '../../components/student/QuickActions';
 import UpcomingClasses from '../../components/student/UpcomingClasses';
 import RecentAnnouncements from '../../components/student/RecentAnnouncements';
+import UpcomingAssignments from '../../components/student/UpcomingAssignments';
 import AcademicProgress from '../../components/student/AcademicProgress';
 import DashboardSkeleton from '../../components/student/DashboardSkeleton';
 
@@ -107,10 +108,17 @@ export default function StudentDashboard() {
               {/* Quick actions */}
               <QuickActions />
 
-              {/* Two-column section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <UpcomingClasses classes={dashboardData.upcomingClasses} />
-                <RecentAnnouncements announcements={dashboardData.announcements} />
+              {/* Three-column section */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1">
+                  <UpcomingClasses classes={dashboardData.upcomingClasses} />
+                </div>
+                <div className="lg:col-span-1">
+                  <UpcomingAssignments assignments={dashboardData.pendingAssignmentsList} />
+                </div>
+                <div className="lg:col-span-1">
+                  <RecentAnnouncements announcements={dashboardData.announcements} />
+                </div>
               </div>
 
               {/* Academic progress */}

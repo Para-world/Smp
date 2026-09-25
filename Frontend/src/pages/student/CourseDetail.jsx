@@ -246,6 +246,47 @@ export default function CourseDetail() {
                     </Card>
                   </motion.div>
 
+                  {/* Course Result */}
+                  {data.result && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.18 }}>
+                      <Card className="border-emerald-100 dark:border-emerald-900/50 shadow-sm overflow-hidden">
+                        <div className="bg-emerald-600 dark:bg-emerald-900/50 p-4 text-white">
+                          <h3 className="font-display font-semibold flex items-center gap-2">
+                            <CheckCircle2 size={18} />
+                            Your Result
+                          </h3>
+                        </div>
+                        <div className="p-4 space-y-4 bg-emerald-50/30 dark:bg-emerald-900/10">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-xs uppercase tracking-wider font-semibold text-emerald-600 dark:text-emerald-400 mb-1">Grade</p>
+                              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold text-lg">
+                                {data.result.grade || '-'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1">Status</p>
+                              <Badge className={data.result.status === 'PASS' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}>
+                                {data.result.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-3 border-t border-emerald-100 dark:border-emerald-800/50 flex justify-between items-center">
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Grade Points</span>
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{data.result.gradePoint || '-'}</span>
+                          </div>
+                          
+                          <Link to={`/student/results/${data.result.id}`}>
+                            <Button size="sm" variant="outline" className="w-full text-xs h-8 mt-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20">
+                              View Result
+                            </Button>
+                          </Link>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )}
+
                   {/* Upcoming Exams */}
                   {data.upcomingExams && data.upcomingExams.length > 0 && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>

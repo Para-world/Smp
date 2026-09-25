@@ -228,3 +228,30 @@ export async function fetchExamDetail(examId) {
 
   return res.json();
 }
+
+export async function fetchResults() {
+  const res = await fetch(`${API_URL}/student/results`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load results');
+  }
+
+  return res.json();
+}
+
+export async function fetchResultDetail(resultId) {
+  const res = await fetch(`${API_URL}/student/results/${resultId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load result details');
+  }
+
+  return res.json();
+}
+

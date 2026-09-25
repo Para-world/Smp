@@ -18,6 +18,8 @@ import {
   submissions,
   classSchedules,
   exams,
+  studentResults,
+  semesterResults,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
@@ -230,24 +232,52 @@ router.get(
         }
       }
 
-      // ── 6. GPA (average of final grades if available) ──────────────────
+      // ── 6. CGPA (Academic Performance) ──────────────────
       let gpa: number | null = null;
+      let totalEarnedCredits = 0;
+      let latestResult = null;
+      
+      const semResults = await db
+        .select({
+          sgpa: semesterResults.sgpa,
+          earnedCredits: semesterResults.earnedCredits,
+        })
+        .from(semesterResults)
+        .where(and(
+          eq(semesterResults.studentId, userId),
+          eq(semesterResults.status, 'PASS')
+        ));
+        
+      if (semResults.length > 0) {
+        let totalGradePoints = 0;
+        semResults.forEach(sr => {
+          const sgpaNum = parseFloat(sr.sgpa || "0");
+          const credits = sr.earnedCredits || 0;
+          totalEarnedCredits += credits;
+          totalGradePoints += (sgpaNum * credits);
+        });
+        
+        if (totalEarnedCredits > 0) {
+          gpa = Math.round((totalGradePoints / totalEarnedCredits) * 100) / 100;
+        }
+      }
 
-      const gradeRows = await db
-        .select({ finalGrade: enrollments.finalGrade })
-        .from(enrollments)
-        .where(eq(enrollments.studentId, userId));
+      // Latest course result
+      const [latestCourseResult] = await db
+        .select({
+          id: studentResults.id,
+          courseTitle: courses.title,
+          grade: studentResults.grade,
+          gradePoint: studentResults.gradePoint,
+        })
+        .from(studentResults)
+        .innerJoin(courses, eq(studentResults.courseId, courses.id))
+        .where(eq(studentResults.studentId, userId))
+        .orderBy(desc(studentResults.publishedAt))
+        .limit(1);
 
-      const numericGrades = gradeRows
-        .map((g) => parseFloat(g.finalGrade ?? ""))
-        .filter((g) => !isNaN(g));
-
-      if (numericGrades.length > 0) {
-        gpa =
-          Math.round(
-            (numericGrades.reduce((a, b) => a + b, 0) / numericGrades.length) *
-              100
-          ) / 100;
+      if (latestCourseResult) {
+        latestResult = latestCourseResult;
       }
 
       // ── 7. Upcoming classes (from classSchedules) ─────────────
@@ -394,6 +424,12 @@ router.get(
         pendingAssignmentsList,
         upcomingExams,
         semesterProgress,
+        academicPerformance: {
+          cgpa: gpa,
+          currentSgpa: semResults.length > 0 ? parseFloat(semResults[semResults.length - 1].sgpa || "0") : null,
+          totalEarnedCredits,
+          latestResult
+        },
         activeSemester: activeSemester
           ? {
               name: activeSemester.name,
@@ -567,6 +603,25 @@ router.get(
         .orderBy(exams.date)
         .limit(3);
         
+      // Fetch course result
+      const [courseResult] = await db
+        .select({
+          id: studentResults.id,
+          grade: studentResults.grade,
+          gradePoint: studentResults.gradePoint,
+          status: studentResults.status,
+          publishedAt: studentResults.publishedAt,
+        })
+        .from(studentResults)
+        .where(
+          and(
+            eq(studentResults.courseId, courseId),
+            eq(studentResults.studentId, userId)
+          )
+        )
+        .orderBy(desc(studentResults.publishedAt))
+        .limit(1);
+
       res.json({ 
         course: {
             ...course,
@@ -574,7 +629,8 @@ router.get(
             enrolledAt: enrollment.enrolledAt,
         },
         assignments: courseAssignments,
-        upcomingExams: upcomingExams
+        upcomingExams: upcomingExams,
+        result: courseResult || null
       });
     } catch (error) {
       console.error("Fetch course details error:", error);
@@ -1587,6 +1643,146 @@ router.get(
       res.json(exam);
     } catch (error) {
       console.error("Fetch exam error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/results ────────────────────────────────────────────────
+// Returns all results grouped by semester + CGPA calculations
+
+router.get(
+  "/results",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+
+      // Fetch all semester summaries
+      const semesterSummaries = await db
+        .select({
+          id: semesterResults.id,
+          semesterId: semesterResults.semesterId,
+          semesterName: semesters.name,
+          academicYear: semesterResults.academicYear,
+          sgpa: semesterResults.sgpa,
+          totalCredits: semesterResults.totalCredits,
+          earnedCredits: semesterResults.earnedCredits,
+          status: semesterResults.status,
+          publishedAt: semesterResults.publishedAt,
+        })
+        .from(semesterResults)
+        .innerJoin(semesters, eq(semesterResults.semesterId, semesters.id))
+        .where(and(
+          eq(semesterResults.studentId, userId),
+          eq(semesterResults.status, "PASS") // Or whatever criteria
+        ))
+        .orderBy(desc(semesters.startDate));
+
+      // Fetch all individual subject results
+      const allSubjectResults = await db
+        .select({
+          id: studentResults.id,
+          semesterId: studentResults.semesterId,
+          courseId: studentResults.courseId,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          internalMarks: studentResults.internalMarks,
+          externalMarks: studentResults.externalMarks,
+          practicalMarks: studentResults.practicalMarks,
+          totalMarks: studentResults.totalMarks,
+          grade: studentResults.grade,
+          gradePoint: studentResults.gradePoint,
+          credits: studentResults.credits,
+          status: studentResults.status,
+        })
+        .from(studentResults)
+        .innerJoin(courses, eq(studentResults.courseId, courses.id))
+        .where(eq(studentResults.studentId, userId));
+
+      // Calculate CGPA dynamically if we want, or derive from semester results
+      let totalGradePoints = 0;
+      let totalEarnedCredits = 0;
+
+      const groupedResults = semesterSummaries.map(sem => {
+        const subjects = allSubjectResults.filter(sub => sub.semesterId === sem.semesterId);
+        
+        // Summing up for CGPA calculation (simple weighted average)
+        subjects.forEach(sub => {
+          if (sub.gradePoint && sub.credits) {
+            totalGradePoints += (sub.gradePoint * sub.credits);
+            totalEarnedCredits += sub.credits;
+          }
+        });
+
+        return {
+          ...sem,
+          subjects
+        };
+      });
+
+      const cgpa = totalEarnedCredits > 0 ? (totalGradePoints / totalEarnedCredits).toFixed(2) : null;
+
+      res.json({
+        cgpa,
+        totalEarnedCredits,
+        semesters: groupedResults,
+      });
+
+    } catch (error) {
+      console.error("Fetch results error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/results/:resultId ──────────────────────────────────────
+// Returns details for a specific subject result
+
+router.get(
+  "/results/:resultId",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { resultId } = req.params;
+      const userId = req.user!.userId;
+
+      const [result] = await db
+        .select({
+          id: studentResults.id,
+          academicYear: studentResults.academicYear,
+          internalMarks: studentResults.internalMarks,
+          externalMarks: studentResults.externalMarks,
+          practicalMarks: studentResults.practicalMarks,
+          totalMarks: studentResults.totalMarks,
+          grade: studentResults.grade,
+          gradePoint: studentResults.gradePoint,
+          credits: studentResults.credits,
+          status: studentResults.status,
+          publishedAt: studentResults.publishedAt,
+          courseId: courses.id,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          semesterName: semesters.name,
+        })
+        .from(studentResults)
+        .innerJoin(courses, eq(studentResults.courseId, courses.id))
+        .innerJoin(semesters, eq(studentResults.semesterId, semesters.id))
+        .where(and(
+          eq(studentResults.id, resultId),
+          eq(studentResults.studentId, userId)
+        ));
+
+      if (!result) {
+        res.status(404).json({ error: "Result not found or unauthorized." });
+        return;
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Fetch result details error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }

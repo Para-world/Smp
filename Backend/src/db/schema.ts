@@ -84,6 +84,14 @@ export const examStatusEnum = pgEnum("exam_status", [
   "CANCELLED"
 ]);
 
+export const resultStatusEnum = pgEnum("result_status", [
+  "PASS",
+  "FAIL",
+  "ABSENT",
+  "WITHHELD",
+  "PENDING"
+]);
+
 export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "APPROVED",
@@ -370,6 +378,41 @@ export const announcements = pgTable("announcements", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ─── Results ─────────────────────────────────────────────────────────────────
+
+export const studentResults = pgTable("student_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+  semesterId: uuid("semester_id").notNull().references(() => semesters.id, { onDelete: "cascade" }),
+  academicYear: varchar("academic_year", { length: 20 }), // e.g. "2026-2027"
+  internalMarks: integer("internal_marks"),
+  externalMarks: integer("external_marks"),
+  practicalMarks: integer("practical_marks"),
+  totalMarks: integer("total_marks"),
+  grade: varchar("grade", { length: 5 }), // e.g. "A+", "B"
+  gradePoint: integer("grade_point"), // e.g. 9, 8
+  credits: integer("credits"),
+  status: resultStatusEnum("status").notNull().default("PENDING"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const semesterResults = pgTable("semester_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  semesterId: uuid("semester_id").notNull().references(() => semesters.id, { onDelete: "cascade" }),
+  academicYear: varchar("academic_year", { length: 20 }),
+  sgpa: varchar("sgpa", { length: 10 }), // Stored as string to handle precision like "8.61"
+  totalCredits: integer("total_credits"),
+  earnedCredits: integer("earned_credits"),
+  status: resultStatusEnum("status").notNull().default("PENDING"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -381,6 +424,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   announcements: many(announcements),
   trustedDevices: many(trustedDevices),
   deviceLoginRequests: many(deviceLoginRequests),
+  studentResults: many(studentResults),
+  semesterResults: many(semesterResults),
 }));
 
 export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
@@ -394,6 +439,7 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
 
 export const semestersRelations = relations(semesters, ({ many }) => ({
   courses: many(courses),
+  semesterResults: many(semesterResults),
 }));
 
 export const coursesRelations = relations(courses, ({ one, many }) => ({
@@ -405,6 +451,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   attendance: many(attendance),
   classSchedules: many(classSchedules),
   exams: many(exams),
+  studentResults: many(studentResults),
 }));
 
 export const enrollmentsRelations = relations(enrollments, ({ one }) => ({
@@ -442,4 +489,15 @@ export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
 
 export const examsRelations = relations(exams, ({ one }) => ({
   course: one(courses, { fields: [exams.courseId], references: [courses.id] }),
+}));
+
+export const studentResultsRelations = relations(studentResults, ({ one }) => ({
+  student: one(users, { fields: [studentResults.studentId], references: [users.id] }),
+  course: one(courses, { fields: [studentResults.courseId], references: [courses.id] }),
+  semester: one(semesters, { fields: [studentResults.semesterId], references: [semesters.id] }),
+}));
+
+export const semesterResultsRelations = relations(semesterResults, ({ one }) => ({
+  student: one(users, { fields: [semesterResults.studentId], references: [users.id] }),
+  semester: one(semesters, { fields: [semesterResults.semesterId], references: [semesters.id] }),
 }));

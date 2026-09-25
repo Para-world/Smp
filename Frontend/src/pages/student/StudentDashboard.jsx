@@ -12,6 +12,7 @@ import UpcomingClasses from '../../components/student/UpcomingClasses';
 import RecentAnnouncements from '../../components/student/RecentAnnouncements';
 import UpcomingAssignments from '../../components/student/UpcomingAssignments';
 import DashboardUpcomingExams from '../../components/student/DashboardUpcomingExams';
+import DashboardAcademicPerformance from '../../components/student/DashboardAcademicPerformance';
 import AcademicProgress from '../../components/student/AcademicProgress';
 import DashboardSkeleton from '../../components/student/DashboardSkeleton';
 
@@ -125,11 +126,18 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              {/* Academic progress */}
-              <AcademicProgress
-                semesterProgress={dashboardData.semesterProgress}
-                activeSemester={dashboardData.activeSemester}
-              />
+              {/* Secondary row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <AcademicProgress
+                    semesterProgress={dashboardData.semesterProgress}
+                    activeSemester={dashboardData.activeSemester}
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <DashboardAcademicPerformance data={dashboardData.academicPerformance} />
+                </div>
+              </div>
             </div>
           )}
         </main>

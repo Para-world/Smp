@@ -1633,7 +1633,7 @@ router.get(
         .from(exams)
         .innerJoin(courses, eq(exams.courseId, courses.id))
         .leftJoin(users, eq(courses.facultyId, users.id))
-        .where(and(eq(exams.id, examId), inArray(exams.courseId, courseIds)));
+        .where(and(eq(exams.id, examId as string), inArray(exams.courseId, courseIds)));
 
       if (!exam) {
         res.status(404).json({ error: "Exam not found or you are not authorized to view it." });
@@ -1771,7 +1771,7 @@ router.get(
         .innerJoin(courses, eq(studentResults.courseId, courses.id))
         .innerJoin(semesters, eq(studentResults.semesterId, semesters.id))
         .where(and(
-          eq(studentResults.id, resultId),
+          eq(studentResults.id, resultId as string),
           eq(studentResults.studentId, userId)
         ));
 

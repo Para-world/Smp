@@ -100,3 +100,47 @@ export async function fetchStudentCourseDetails(courseId) {
   return res.json();
 }
 
+export async function fetchStudentAttendance() {
+  const res = await fetch(`${API_URL}/student/attendance`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load attendance');
+  }
+
+  return res.json();
+}
+
+export async function fetchStudentAttendanceRecords(params = {}) {
+  const url = new URL(`${API_URL}/student/attendance/records`);
+  Object.keys(params).forEach(key => {
+    if (params[key]) url.searchParams.append(key, params[key]);
+  });
+
+  const res = await fetch(url.toString(), {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load attendance records');
+  }
+
+  return res.json();
+}
+
+export async function fetchCourseAttendance(courseId) {
+  const res = await fetch(`${API_URL}/student/attendance/course/${courseId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load course attendance');
+  }
+
+  return res.json();
+}
+

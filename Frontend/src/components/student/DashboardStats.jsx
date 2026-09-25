@@ -4,6 +4,7 @@ import { ClipboardCheck, BookOpen, FileText, TrendingUp } from 'lucide-react';
 import gsap from 'gsap';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 function AnimatedNumber({ value }) {
   const numberRef = useRef(null);
@@ -102,7 +103,7 @@ export default function DashboardStats({ statistics }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 + index * 0.08 }}
             whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            className="group block"
+            className="group block relative"
           >
             <Card className="relative h-full overflow-hidden p-5 transition-shadow hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-black/20">
               {/* Icon */}
@@ -141,6 +142,9 @@ export default function DashboardStats({ statistics }) {
                 )}
               />
             </Card>
+            {stat.key === 'attendance' && (
+              <Link to="/student/attendance" className="absolute inset-0 z-10 rounded-xl" aria-label="View Attendance Details" />
+            )}
           </motion.div>
         );
       })}

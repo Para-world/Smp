@@ -10,6 +10,9 @@ import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import SecuritySettings from './pages/SecuritySettings'
 import StudentDashboard from './pages/student/StudentDashboard'
+import StudentProfile from './pages/student/StudentProfile'
+import StudentCourses from './pages/student/StudentCourses'
+import CourseDetail from './pages/student/CourseDetail'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -126,9 +129,33 @@ function AppContent() {
             </StudentRoute>
           }
         />
+        <Route
+          path="/student/profile"
+          element={
+            <StudentRoute>
+              <StudentProfile />
+            </StudentRoute>
+          }
+        />
+        <Route
+          path="/student/courses"
+          element={
+            <StudentRoute>
+              <StudentCourses />
+            </StudentRoute>
+          }
+        />
+        <Route
+          path="/student/courses/:courseId"
+          element={
+            <StudentRoute>
+              <CourseDetail />
+            </StudentRoute>
+          }
+        />
         {/* Placeholder routes for student sub-pages — will render the dashboard layout */}
         {[
-          'profile', 'courses', 'attendance', 'assignments',
+          'attendance', 'assignments',
           'exams', 'results', 'timetable', 'announcements',
           'notifications', 'settings'
         ].map((page) => (

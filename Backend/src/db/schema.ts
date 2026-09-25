@@ -60,6 +60,21 @@ export const requestStatusEnum = pgEnum("request_status", [
   "USED",
 ]);
 
+export const genderEnum = pgEnum("gender", [
+  "male",
+  "female",
+  "other",
+  "prefer_not_to_say",
+]);
+
+export const studentStatusEnum = pgEnum("student_status", [
+  "active",
+  "inactive",
+  "graduated",
+  "suspended",
+  "on_leave",
+]);
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 
 export const users = pgTable("users", {
@@ -72,6 +87,29 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }),
   isActive: boolean("is_active").notNull().default(true),
   emailVerified: boolean("email_verified").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── Student Profiles ────────────────────────────────────────────────────────
+
+export const studentProfiles = pgTable("student_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  dateOfBirth: date("date_of_birth"),
+  gender: genderEnum("gender"),
+  address: text("address"),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 100 }),
+  postalCode: varchar("postal_code", { length: 20 }),
+  program: varchar("program", { length: 255 }),
+  department: varchar("department", { length: 255 }),
+  semester: integer("semester"),
+  academicYear: varchar("academic_year", { length: 20 }),
+  enrollmentDate: date("enrollment_date"),
+  status: studentStatusEnum("status").notNull().default("active"),
+  emergencyContactName: varchar("emergency_contact_name", { length: 255 }),
+  emergencyContactPhone: varchar("emergency_contact_phone", { length: 20 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -238,7 +276,8 @@ export const announcements = pgTable("announcements", {
 
 // ─── Relations ───────────────────────────────────────────────────────────────
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
+  studentProfile: one(studentProfiles, { fields: [users.id], references: [studentProfiles.userId] }),
   enrollments: many(enrollments),
   taughtCourses: many(courses),
   grades: many(grades),
@@ -246,6 +285,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   announcements: many(announcements),
   trustedDevices: many(trustedDevices),
   deviceLoginRequests: many(deviceLoginRequests),
+}));
+
+export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
+  user: one(users, { fields: [studentProfiles.userId], references: [users.id] }),
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({

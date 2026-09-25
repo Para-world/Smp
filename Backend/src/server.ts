@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Route imports
 import authRoutes from "./routes/auth.js";
@@ -9,6 +11,9 @@ import courseRoutes from "./routes/courses.js";
 import departmentRoutes from "./routes/departments.js";
 import deviceRoutes from "./routes/device.js";
 import studentRoutes from "./routes/student.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -21,6 +26,9 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: "10mb" }));
+
+// Serve uploaded files (avatars etc.)
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 

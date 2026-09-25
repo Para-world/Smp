@@ -35,12 +35,17 @@ export default function UpcomingClasses({ classes }) {
       transition={{ duration: 0.5, delay: 0.35 }}
       className="h-full"
     >
-      <Card className="p-6 h-full shadow-sm hover:shadow-md transition-shadow">
-        <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white mb-6 tracking-tight">
-          Upcoming Classes
-        </h3>
+      <Card className="p-6 h-full shadow-sm hover:shadow-md transition-shadow flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
+            Today's Schedule
+          </h3>
+          <a href="/student/timetable" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+            View Timetable
+          </a>
+        </div>
 
-        <div className="relative space-y-0 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
+        <div className="relative flex-1 space-y-0 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 dark:before:via-slate-800 before:to-transparent">
           {classes.map((cls, index) => (
             <motion.div
               key={cls.courseId || index}

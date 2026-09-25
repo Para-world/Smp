@@ -186,3 +186,17 @@ export async function submitAssignment(assignmentId, payload) {
 
   return res.json();
 }
+export async function fetchTimetable(filters = {}) {
+  const query = new URLSearchParams(filters).toString();
+  const url = query ? `${API_URL}/student/timetable?${query}` : `${API_URL}/student/timetable`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load timetable');
+  }
+
+  return res.json();
+}

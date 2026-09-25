@@ -254,8 +254,17 @@ export default function CourseDetail() {
                       <CardContent className="pt-4 space-y-5">
                         <InfoRow icon={GraduationCap} label="Credits" value={`${course.credits} Credits`} />
                         <InfoRow icon={Calendar} label="Semester" value={`${course.semester?.name || 'TBA'} ${course.semester?.academicYear ? `(${course.semester.academicYear})` : ''}`} />
-                        {course.schedule && <InfoRow icon={Clock} label="Schedule" value={course.schedule} />}
-                        {course.location && <InfoRow icon={MapPin} label="Location" value={course.location} />}
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0">
+                            <Clock size={16} className="text-slate-500 dark:text-slate-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">Schedule</p>
+                            <Link to={`/student/timetable`} className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+                              View Timetable
+                            </Link>
+                          </div>
+                        </div>
                         {course.department?.name && <InfoRow icon={CheckCircle2} label="Department" value={course.department.name} />}
                       </CardContent>
                     </Card>

@@ -59,6 +59,15 @@ export const submissionStatusEnum = pgEnum("submission_status", [
   "graded",
 ]);
 
+export const classTypeEnum = pgEnum("class_type", [
+  "lecture",
+  "lab",
+  "tutorial",
+  "practical",
+  "seminar",
+  "other",
+]);
+
 export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "APPROVED",
@@ -197,6 +206,26 @@ export const courses = pgTable("courses", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ─── Class Schedules ─────────────────────────────────────────────────────────
+
+export const classSchedules = pgTable("class_schedules", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: uuid("course_id")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  instructorId: uuid("instructor_id").references(() => users.id),
+  dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: varchar("start_time", { length: 8 }).notNull(), // "HH:MM"
+  endTime: varchar("end_time", { length: 8 }).notNull(),
+  room: varchar("room", { length: 50 }),
+  building: varchar("building", { length: 100 }),
+  classType: classTypeEnum("class_type").notNull().default("lecture"),
+  isOnline: boolean("is_online").notNull().default(false),
+  meetingUrl: varchar("meeting_url", { length: 500 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Enrollments ─────────────────────────────────────────────────────────────
 
 export const enrollments = pgTable("enrollments", {
@@ -331,6 +360,7 @@ export const coursesRelations = relations(courses, ({ one, many }) => ({
   enrollments: many(enrollments),
   assignments: many(assignments),
   attendance: many(attendance),
+  classSchedules: many(classSchedules),
 }));
 
 export const enrollmentsRelations = relations(enrollments, ({ one }) => ({
@@ -359,4 +389,9 @@ export const announcementsRelations = relations(announcements, ({ one }) => ({
   author: one(users, { fields: [announcements.authorId], references: [users.id] }),
   department: one(departments, { fields: [announcements.departmentId], references: [departments.id] }),
   course: one(courses, { fields: [announcements.courseId], references: [courses.id] }),
+}));
+
+export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
+  course: one(courses, { fields: [classSchedules.courseId], references: [courses.id] }),
+  instructor: one(users, { fields: [classSchedules.instructorId], references: [users.id] }),
 }));

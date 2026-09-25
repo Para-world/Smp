@@ -16,8 +16,9 @@ import {
   semesters,
   departments,
   submissions,
+  classSchedules,
 } from "../db/schema.js";
-import { eq, and, desc, gte, lte, sql, count, avg } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
 import { z } from "zod";
 
@@ -248,46 +249,49 @@ router.get(
           ) / 100;
       }
 
-      // ── 7. Upcoming classes (parsed from schedule strings) ─────────────
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const dayAbbrevs: Record<string, number> = {
-        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
-        M: 1, T: 2, W: 3, R: 4, F: 5, S: 6, U: 0,
-      };
-
+      // ── 7. Upcoming classes (from classSchedules) ─────────────
       const today = new Date();
-      const currentDay = today.getDay();
+      const currentDay = today.getDay(); // 0-6
 
-      // Get faculty names for enrolled courses
-      const facultyIds = studentEnrollments
-        .map((e) => e.facultyId)
-        .filter((id): id is string => id !== null);
+      let upcomingClasses: Array<any> = [];
+      if (courseIds.length > 0) {
+        const todaySchedules = await db
+          .select({
+            id: classSchedules.id,
+            courseId: classSchedules.courseId,
+            courseTitle: courses.title,
+            courseCode: courses.code,
+            instructorName: users.name,
+            startTime: classSchedules.startTime,
+            endTime: classSchedules.endTime,
+            room: classSchedules.room,
+            building: classSchedules.building,
+            isOnline: classSchedules.isOnline,
+          })
+          .from(classSchedules)
+          .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+          .leftJoin(users, eq(classSchedules.instructorId, users.id))
+          .where(
+            and(
+              inArray(classSchedules.courseId, courseIds),
+              eq(classSchedules.dayOfWeek, currentDay)
+            )
+          )
+          .orderBy(classSchedules.startTime)
+          .limit(6);
 
-      let facultyMap: Record<string, string> = {};
-      if (facultyIds.length > 0) {
-        const facultyRows = await db
-          .select({ id: users.id, name: users.name })
-          .from(users);
-        facultyRows.forEach((f) => {
-          facultyMap[f.id] = f.name;
+        upcomingClasses = todaySchedules.map((sch) => {
+          return {
+            id: sch.id,
+            courseId: sch.courseId,
+            courseTitle: sch.courseTitle,
+            courseCode: sch.courseCode,
+            schedule: `${sch.startTime} - ${sch.endTime}`,
+            location: sch.room || "TBA",
+            faculty: sch.instructorName || null,
+          };
         });
       }
-
-      const upcomingClasses = studentEnrollments
-        .filter((e) => e.schedule)
-        .map((e) => {
-          // Parse schedule like "MWF 10:00-11:00" or "Mon/Wed 10:00 AM - 11:00 AM"
-          const schedule = e.schedule ?? "";
-          return {
-            courseId: e.courseId,
-            courseTitle: e.courseTitle,
-            courseCode: e.courseCode,
-            schedule,
-            location: e.location,
-            faculty: e.facultyId ? facultyMap[e.facultyId] ?? null : null,
-          };
-        })
-        .slice(0, 6);
 
       // ── 8. Recent announcements ────────────────────────────────────────
       // Get announcements that are either global (no course/dept filter) or
@@ -1353,6 +1357,72 @@ router.post(
       }
     } catch (error) {
       console.error("Submit assignment error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/timetable ──────────────────────────────────────────────
+// Fetch weekly schedule for enrolled courses
+router.get(
+  "/timetable",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const { courseId } = req.query;
+
+      // 1. Get all courses student is enrolled in
+      const studentEnrollments = await db
+        .select({
+          courseId: enrollments.courseId,
+        })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      if (courseIds.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      // Filter by requested courseId if it exists, otherwise use all enrolled
+      let queryCourseIds = courseIds;
+      if (courseId && typeof courseId === "string") {
+        if (!courseIds.includes(courseId)) {
+          res.status(403).json({ error: "You are not enrolled in this course." });
+          return;
+        }
+        queryCourseIds = [courseId];
+      }
+
+      // 2. Fetch class schedules for those courses
+      const schedules = await db
+        .select({
+          id: classSchedules.id,
+          courseId: classSchedules.courseId,
+          courseTitle: courses.title,
+          courseCode: courses.code,
+          instructorName: users.name,
+          dayOfWeek: classSchedules.dayOfWeek,
+          startTime: classSchedules.startTime,
+          endTime: classSchedules.endTime,
+          room: classSchedules.room,
+          building: classSchedules.building,
+          classType: classSchedules.classType,
+          isOnline: classSchedules.isOnline,
+          meetingUrl: classSchedules.meetingUrl,
+        })
+        .from(classSchedules)
+        .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+        .leftJoin(users, eq(classSchedules.instructorId, users.id))
+        .where(inArray(classSchedules.courseId, queryCourseIds));
+
+      res.json(schedules);
+    } catch (error) {
+      console.error("Fetch timetable error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }

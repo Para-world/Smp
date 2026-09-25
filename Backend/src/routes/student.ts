@@ -441,7 +441,7 @@ router.get(
   async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user!.userId;
-      const { courseId } = req.params;
+      const courseId = req.params.courseId as string;
 
       // Check enrollment
       const [enrollment] = await db
@@ -530,6 +530,266 @@ router.get(
       });
     } catch (error) {
       console.error("Fetch course details error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/attendance ─────────────────────────────────────────────
+// Returns overall attendance summary and course-wise breakdown.
+
+router.get(
+  "/attendance",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+
+      // 1. Get all enrollments for this student
+      const studentCourses = await db
+        .select({
+          courseId: courses.id,
+          code: courses.code,
+          title: courses.title,
+        })
+        .from(enrollments)
+        .innerJoin(courses, eq(enrollments.courseId, courses.id))
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = studentCourses.map(c => c.courseId);
+
+      if (courseIds.length === 0) {
+        res.json({
+          summary: { percentage: 0, present: 0, absent: 0, late: 0, excused: 0, total: 0 },
+          courses: []
+        });
+        return;
+      }
+
+      // 2. Fetch all attendance records for these courses
+      const records = await db
+        .select({
+          courseId: attendance.courseId,
+          status: attendance.status,
+        })
+        .from(attendance)
+        .where(
+          and(
+            eq(attendance.studentId, userId)
+          )
+        );
+
+      // 3. Aggregate data
+      let totalPresent = 0, totalAbsent = 0, totalLate = 0, totalExcused = 0, totalClasses = 0;
+      
+      const courseMap = new Map();
+      studentCourses.forEach(c => {
+        courseMap.set(c.courseId, {
+          courseId: c.courseId,
+          code: c.code,
+          name: c.title,
+          present: 0,
+          absent: 0,
+          late: 0,
+          excused: 0,
+          total: 0,
+          percentage: 0
+        });
+      });
+
+      records.forEach(r => {
+        const c = courseMap.get(r.courseId);
+        if (c) {
+          c.total++;
+          totalClasses++;
+          
+          if (r.status === 'present') { c.present++; totalPresent++; }
+          else if (r.status === 'absent') { c.absent++; totalAbsent++; }
+          else if (r.status === 'late') { c.late++; totalLate++; }
+          else if (r.status === 'excused') { c.excused++; totalExcused++; }
+        }
+      });
+
+      // Calculate percentages (assuming late counts as present for percentage, but configurable. Let's count present + late)
+      const calculatePercentage = (p: number, l: number, t: number) => t === 0 ? 0 : Number((((p + l) / t) * 100).toFixed(1));
+
+      const overallPercentage = calculatePercentage(totalPresent, totalLate, totalClasses);
+      
+      const coursesData = Array.from(courseMap.values()).map(c => ({
+        ...c,
+        percentage: calculatePercentage(c.present, c.late, c.total)
+      }));
+
+      res.json({
+        summary: {
+          percentage: overallPercentage,
+          present: totalPresent,
+          absent: totalAbsent,
+          late: totalLate,
+          excused: totalExcused,
+          total: totalClasses
+        },
+        courses: coursesData
+      });
+    } catch (error) {
+      console.error("Fetch attendance error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/attendance/records ─────────────────────────────────────
+// Detailed history with filters and pagination
+
+router.get(
+  "/attendance/records",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const { courseId, status, startDate, endDate, page = '1', limit = '50' } = req.query;
+
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const offset = (pageNum - 1) * limitNum;
+
+      const conditions = [eq(attendance.studentId, userId)];
+
+      if (courseId) conditions.push(eq(attendance.courseId, courseId as string));
+      if (status && status !== 'all') conditions.push(eq(attendance.status, status as any));
+      if (startDate) conditions.push(gte(attendance.date, startDate as string));
+      if (endDate) conditions.push(lte(attendance.date, endDate as string));
+
+      const queryConditions = and(...conditions);
+
+      const records = await db
+        .select({
+          id: attendance.id,
+          date: attendance.date,
+          status: attendance.status,
+          remarks: attendance.remarks,
+          markedAt: attendance.createdAt,
+          course: {
+            id: courses.id,
+            code: courses.code,
+            title: courses.title,
+          }
+        })
+        .from(attendance)
+        .innerJoin(courses, eq(attendance.courseId, courses.id))
+        .where(queryConditions)
+        .orderBy(desc(attendance.date), desc(attendance.createdAt))
+        .limit(limitNum)
+        .offset(offset);
+
+      const [totalCount] = await db
+        .select({ count: count() })
+        .from(attendance)
+        .where(queryConditions);
+
+      res.json({
+        records,
+        pagination: {
+          total: Number(totalCount.count),
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(Number(totalCount.count) / limitNum)
+        }
+      });
+    } catch (error) {
+      console.error("Fetch attendance records error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── GET /api/student/attendance/course/:courseId ────────────────────────────
+// Detailed course attendance
+
+router.get(
+  "/attendance/course/:courseId",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const courseId = req.params.courseId as string;
+
+      // Verify enrollment
+      const [enrollment] = await db
+        .select({ id: enrollments.id })
+        .from(enrollments)
+        .where(
+          and(
+            eq(enrollments.studentId, userId),
+            eq(enrollments.courseId, courseId)
+          )
+        )
+        .limit(1);
+
+      if (!enrollment) {
+        res.status(403).json({ error: "You are not enrolled in this course." });
+        return;
+      }
+
+      // Fetch course details
+      const [course] = await db
+        .select({
+          id: courses.id,
+          code: courses.code,
+          title: courses.title,
+          faculty: {
+            name: users.name,
+          }
+        })
+        .from(courses)
+        .leftJoin(users, eq(courses.facultyId, users.id))
+        .where(eq(courses.id, courseId))
+        .limit(1);
+
+      // Fetch attendance history
+      const history = await db
+        .select({
+          id: attendance.id,
+          date: attendance.date,
+          status: attendance.status,
+          remarks: attendance.remarks,
+        })
+        .from(attendance)
+        .where(
+          and(
+            eq(attendance.studentId, userId),
+            eq(attendance.courseId, courseId)
+          )
+        )
+        .orderBy(desc(attendance.date));
+
+      let present = 0, absent = 0, late = 0, excused = 0, total = history.length;
+      history.forEach(r => {
+        if (r.status === 'present') present++;
+        else if (r.status === 'absent') absent++;
+        else if (r.status === 'late') late++;
+        else if (r.status === 'excused') excused++;
+      });
+
+      const percentage = total === 0 ? 0 : Number((((present + late) / total) * 100).toFixed(1));
+
+      res.json({
+        course,
+        summary: {
+          percentage,
+          present,
+          absent,
+          late,
+          excused,
+          total
+        },
+        history
+      });
+    } catch (error) {
+      console.error("Fetch course attendance error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   }

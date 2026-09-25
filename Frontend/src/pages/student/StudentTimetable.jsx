@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
-  Clock, MapPin, Video, AlertTriangle 
+  Clock, MapPin, Video, AlertTriangle, BookOpen, User
 } from 'lucide-react';
 import { 
   startOfWeek, endOfWeek, eachDayOfInterval, format, 
@@ -16,6 +16,12 @@ import DashboardSkeleton from '../../components/student/DashboardSkeleton';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { fetchTimetable } from '../../services/studentApi';
 import { cn } from '@/lib/utils';
@@ -54,6 +60,13 @@ export default function StudentTimetable() {
   const [error, setError] = useState(null);
   
   const [courseFilter, setCourseFilter] = useState('all');
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const openClassDetails = (classItem, dayDate) => {
+    setSelectedClass({ ...classItem, dateObj: dayDate });
+    setIsDialogOpen(true);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -276,11 +289,12 @@ export default function StudentTimetable() {
                                 transition={{ delay: i * 0.05 }}
                                 key={sch.id}
                                 className={cn(
-                                  "p-3 rounded-xl border flex flex-col gap-2 transition-all hover:shadow-md",
+                                  "p-3 rounded-xl border flex flex-col gap-2 transition-all hover:shadow-md cursor-pointer",
                                   status === 'ONGOING' 
                                     ? "bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800" 
                                     : "bg-white border-slate-200 dark:bg-slate-800/50 dark:border-slate-700"
                                 )}
+                                onClick={() => openClassDetails(sch, day)}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", statusStyles[status])}>
@@ -347,7 +361,11 @@ export default function StudentTimetable() {
                           daySchedules.map((sch) => {
                             const status = getClassStatus(sch.startTime, sch.endTime, day);
                             return (
-                              <div key={sch.id} className="flex gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                              <div 
+                                key={sch.id} 
+                                className="flex gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 cursor-pointer hover:shadow-sm transition-all"
+                                onClick={() => openClassDetails(sch, day)}
+                              >
                                 <div className="shrink-0 flex flex-col items-center justify-center px-2 border-r border-slate-200 dark:border-slate-700 min-w-[80px]">
                                   <span className="text-sm font-bold text-slate-900 dark:text-white">{sch.startTime}</span>
                                   <span className="text-xs text-slate-500">{sch.endTime}</span>
@@ -379,6 +397,64 @@ export default function StudentTimetable() {
                   );
                 })}
               </div>
+
+              {/* Class Details Dialog */}
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white dark:bg-[#0B1120] border-none shadow-2xl rounded-2xl">
+                  {selectedClass && (
+                    <>
+                      <div className="bg-indigo-600 dark:bg-indigo-900/50 p-6 text-white relative">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                          <BookOpen size={100} />
+                        </div>
+                        <Badge variant="secondary" className="mb-3 bg-white/20 hover:bg-white/30 text-white border-none uppercase text-[10px] tracking-wider">
+                          {getClassStatus(selectedClass.startTime, selectedClass.endTime, selectedClass.dateObj)}
+                        </Badge>
+                        <h2 className="text-xl font-display font-bold mb-1 leading-tight">{selectedClass.courseTitle}</h2>
+                        <p className="text-indigo-100 text-sm font-mono">{selectedClass.courseCode}</p>
+                      </div>
+                      <div className="p-6 space-y-5">
+                        <div className="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                          <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-800/80 flex items-center justify-center">
+                            <Clock size={20} className="text-slate-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                              {format(selectedClass.dateObj, 'EEEE, d MMMM')}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {selectedClass.startTime} – {selectedClass.endTime}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><User size={12} /> Instructor</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedClass.instructorName || 'TBA'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><MapPin size={12} /> Room</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">{selectedClass.room || 'TBA'} {selectedClass.building ? `(${selectedClass.building})` : ''}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1"><CalendarIcon size={12} /> Class Type</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white capitalize">{selectedClass.classType}</p>
+                          </div>
+                        </div>
+
+                        {selectedClass.isOnline && (
+                          <div className="pt-2">
+                            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                              <Video size={16} /> Join Online Class
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
             </>
           )}
         </main>

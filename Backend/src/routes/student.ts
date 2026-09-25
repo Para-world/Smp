@@ -15,6 +15,7 @@ import {
   announcements,
   semesters,
   departments,
+  submissions,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
@@ -795,8 +796,6 @@ router.get(
   }
 );
 
-export default router;
-
 
 // ─── GET /api/student/profile ────────────────────────────────────────────────
 // Returns the authenticated student's full profile.
@@ -1033,3 +1032,330 @@ router.post(
     }
   }
 );
+
+// ─── ASSIGNMENTS (STUDENT MODULE) ────────────────────────────────────────────
+
+// 1. Get all assignments for enrolled courses with their status
+router.get(
+  "/assignments",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+
+      // 1. Get all courses the student is enrolled in
+      const enrolledCourses = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = enrolledCourses.map((e) => e.courseId);
+
+      if (courseIds.length === 0) {
+        res.json({ assignments: [], summary: { total: 0, pending: 0, submitted: 0, overdue: 0 } });
+        return;
+      }
+
+      // 2. Fetch all published assignments for these courses
+      const allAssignments = await db
+        .select({
+          id: assignments.id,
+          courseId: assignments.courseId,
+          title: assignments.title,
+          type: assignments.type,
+          dueDate: assignments.dueDate,
+          maxScore: assignments.maxScore,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+        })
+        .from(assignments)
+        .innerJoin(courses, eq(assignments.courseId, courses.id))
+        .where(
+          and(
+            eq(assignments.isPublished, true),
+            sql`${assignments.courseId} = ANY(ARRAY[${sql.join(courseIds, sql`, `)}]::uuid[])`
+          )
+        );
+
+      // 3. Fetch submissions for this student
+      const allSubmissions = await db
+        .select({
+          id: submissions.id,
+          assignmentId: submissions.assignmentId,
+          status: submissions.status,
+          submittedAt: submissions.submittedAt,
+        })
+        .from(submissions)
+        .where(eq(submissions.studentId, userId));
+
+      // 4. Fetch grades for this student
+      const allGrades = await db
+        .select({
+          assignmentId: grades.assignmentId,
+          score: grades.score,
+        })
+        .from(grades)
+        .where(eq(grades.studentId, userId));
+
+      const submissionMap = new Map(allSubmissions.map((s) => [s.assignmentId, s]));
+      const gradeMap = new Map(allGrades.map((g) => [g.assignmentId, g]));
+
+      const now = new Date();
+      let pendingCount = 0;
+      let submittedCount = 0;
+      let overdueCount = 0;
+
+      const formattedAssignments = allAssignments.map((a) => {
+        const submission = submissionMap.get(a.id);
+        const grade = gradeMap.get(a.id);
+
+        let status = "pending";
+        if (grade) {
+          status = "graded";
+          submittedCount++;
+        } else if (submission) {
+          status = "submitted";
+          submittedCount++;
+        } else if (a.dueDate && new Date(a.dueDate) < now) {
+          status = "overdue";
+          overdueCount++;
+        } else {
+          status = "pending";
+          pendingCount++;
+        }
+
+        return {
+          id: a.id,
+          courseId: a.courseId,
+          courseCode: a.courseCode,
+          courseTitle: a.courseTitle,
+          title: a.title,
+          type: a.type,
+          dueDate: a.dueDate,
+          maxScore: a.maxScore,
+          status,
+          score: grade?.score || null,
+          submittedAt: submission?.submittedAt || null,
+        };
+      });
+
+      // Sort by due date (closest first)
+      formattedAssignments.sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+
+      res.json({
+        assignments: formattedAssignments,
+        summary: {
+          total: formattedAssignments.length,
+          pending: pendingCount,
+          submitted: submittedCount,
+          overdue: overdueCount,
+        },
+      });
+    } catch (error) {
+      console.error("Fetch student assignments error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// 2. Get details for a specific assignment
+router.get(
+  "/assignments/:assignmentId",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const assignmentId = req.params.assignmentId as string;
+
+      // 1. Fetch assignment details
+      const [assignment] = await db
+        .select({
+          id: assignments.id,
+          courseId: assignments.courseId,
+          title: assignments.title,
+          description: assignments.description,
+          type: assignments.type,
+          dueDate: assignments.dueDate,
+          maxScore: assignments.maxScore,
+          weight: assignments.weight,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+        })
+        .from(assignments)
+        .innerJoin(courses, eq(assignments.courseId, courses.id))
+        .where(eq(assignments.id, assignmentId))
+        .limit(1);
+
+      if (!assignment) {
+        res.status(404).json({ error: "Assignment not found." });
+        return;
+      }
+
+      // 2. Check if student is enrolled in the course
+      const [enrollment] = await db
+        .select({ id: enrollments.id })
+        .from(enrollments)
+        .where(
+          and(
+            eq(enrollments.studentId, userId),
+            eq(enrollments.courseId, assignment.courseId)
+          )
+        )
+        .limit(1);
+
+      if (!enrollment) {
+        res.status(403).json({ error: "You are not enrolled in this course." });
+        return;
+      }
+
+      // 3. Fetch submission details
+      const [submission] = await db
+        .select()
+        .from(submissions)
+        .where(
+          and(
+            eq(submissions.studentId, userId),
+            eq(submissions.assignmentId, assignmentId)
+          )
+        )
+        .limit(1);
+
+      // 4. Fetch grade details
+      const [grade] = await db
+        .select()
+        .from(grades)
+        .where(
+          and(
+            eq(grades.studentId, userId),
+            eq(grades.assignmentId, assignmentId)
+          )
+        )
+        .limit(1);
+
+      let status = "pending";
+      if (grade) {
+        status = "graded";
+      } else if (submission) {
+        status = "submitted";
+      } else if (assignment.dueDate && new Date(assignment.dueDate) < new Date()) {
+        status = "overdue";
+      }
+
+      res.json({
+        assignment: { ...assignment, status },
+        submission: submission || null,
+        grade: grade || null,
+      });
+    } catch (error) {
+      console.error("Fetch assignment details error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// 3. Submit an assignment
+router.post(
+  "/assignments/:assignmentId/submit",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const assignmentId = req.params.assignmentId as string;
+      const { content, fileUrl } = req.body;
+
+      // Check if assignment exists and is published
+      const [assignment] = await db
+        .select({ id: assignments.id, courseId: assignments.courseId, dueDate: assignments.dueDate })
+        .from(assignments)
+        .where(and(eq(assignments.id, assignmentId), eq(assignments.isPublished, true)))
+        .limit(1);
+
+      if (!assignment) {
+        res.status(404).json({ error: "Assignment not found." });
+        return;
+      }
+
+      // Check enrollment
+      const [enrollment] = await db
+        .select({ id: enrollments.id })
+        .from(enrollments)
+        .where(
+          and(
+            eq(enrollments.studentId, userId),
+            eq(enrollments.courseId, assignment.courseId)
+          )
+        )
+        .limit(1);
+
+      if (!enrollment) {
+        res.status(403).json({ error: "You are not enrolled in this course." });
+        return;
+      }
+
+      // Check if already graded
+      const [grade] = await db
+        .select({ id: grades.id })
+        .from(grades)
+        .where(and(eq(grades.studentId, userId), eq(grades.assignmentId, assignmentId)))
+        .limit(1);
+        
+      if (grade) {
+        res.status(400).json({ error: "This assignment has already been graded and cannot be resubmitted." });
+        return;
+      }
+
+      // Check for existing submission
+      const [existingSubmission] = await db
+        .select({ id: submissions.id })
+        .from(submissions)
+        .where(and(eq(submissions.studentId, userId), eq(submissions.assignmentId, assignmentId)))
+        .limit(1);
+
+      const status = assignment.dueDate && new Date() > new Date(assignment.dueDate) ? "late" : "submitted";
+
+      if (existingSubmission) {
+        // Update
+        const [updatedSubmission] = await db
+          .update(submissions)
+          .set({
+            content,
+            fileUrl,
+            status,
+            submittedAt: new Date(),
+          })
+          .where(eq(submissions.id, existingSubmission.id))
+          .returning();
+          
+        res.json({ message: "Assignment resubmitted successfully.", submission: updatedSubmission });
+        return;
+      } else {
+        // Insert
+        const [newSubmission] = await db
+          .insert(submissions)
+          .values({
+            studentId: userId,
+            assignmentId,
+            content,
+            fileUrl,
+            status,
+          })
+          .returning();
+          
+        res.json({ message: "Assignment submitted successfully.", submission: newSubmission });
+        return;
+      }
+    } catch (error) {
+      console.error("Submit assignment error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+export default router;

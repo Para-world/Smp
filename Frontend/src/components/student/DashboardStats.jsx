@@ -145,6 +145,9 @@ export default function DashboardStats({ statistics }) {
             {stat.key === 'attendance' && (
               <Link to="/student/attendance" className="absolute inset-0 z-10 rounded-xl" aria-label="View Attendance Details" />
             )}
+            {stat.key === 'pendingAssignments' && (
+              <Link to="/student/assignments" className="absolute inset-0 z-10 rounded-xl" aria-label="View Assignments" />
+            )}
           </motion.div>
         );
       })}

@@ -144,3 +144,45 @@ export async function fetchCourseAttendance(courseId) {
   return res.json();
 }
 
+// ─── ASSIGNMENTS ────────────────────────────────────────────────────────────
+
+export async function fetchAssignments() {
+  const res = await fetch(`${API_URL}/student/assignments`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load assignments');
+  }
+
+  return res.json();
+}
+
+export async function fetchAssignmentDetails(assignmentId) {
+  const res = await fetch(`${API_URL}/student/assignments/${assignmentId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load assignment details');
+  }
+
+  return res.json();
+}
+
+export async function submitAssignment(assignmentId, payload) {
+  const res = await fetch(`${API_URL}/student/assignments/${assignmentId}/submit`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to submit assignment');
+  }
+
+  return res.json();
+}

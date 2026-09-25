@@ -52,6 +52,13 @@ export const assignmentTypeEnum = pgEnum("assignment_type", [
   "lab",
 ]);
 
+export const submissionStatusEnum = pgEnum("submission_status", [
+  "pending",
+  "submitted",
+  "late",
+  "graded",
+]);
+
 export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "APPROVED",
@@ -220,6 +227,23 @@ export const assignments = pgTable("assignments", {
   weight: numeric("weight", { precision: 5, scale: 2 }).notNull().default("1"),
   dueDate: timestamp("due_date", { withTimezone: true }),
   isPublished: boolean("is_published").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── Submissions ─────────────────────────────────────────────────────────────
+
+export const submissions = pgTable("submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: uuid("student_id")
+    .notNull()
+    .references(() => users.id),
+  assignmentId: uuid("assignment_id")
+    .notNull()
+    .references(() => assignments.id),
+  status: submissionStatusEnum("status").notNull().default("submitted"),
+  content: text("content"),
+  fileUrl: varchar("file_url", { length: 500 }),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

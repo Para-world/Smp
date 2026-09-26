@@ -37,6 +37,7 @@ import AdminCourses from './pages/admin/AdminCourses'
 import AdminCourseDetail from './pages/admin/AdminCourseDetail'
 import AdminEnrollments from './pages/admin/AdminEnrollments'
 import AdminAttendance from './pages/admin/AdminAttendance'
+import AdminAssignments from './pages/admin/AdminAssignments'
 import AdminExams from './pages/admin/AdminExams'
 import AdminExamCreate from './pages/admin/AdminExamCreate'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
@@ -454,6 +455,14 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminAttendance />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/assignments"
+          element={
+            <AdminRoute>
+              <AdminAssignments />
             </AdminRoute>
           }
         />

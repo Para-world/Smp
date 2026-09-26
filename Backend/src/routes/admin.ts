@@ -630,6 +630,33 @@ router.delete("/enrollments/:id", requirePermission(PERMISSIONS.ENROLLMENTS_DELE
 });
 
 /**
+ * GET /api/admin/assignments
+ * List all assignments
+ */
+router.get("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const allAssignments = await db
+      .select({
+        id: assignments.id,
+        title: assignments.title,
+        dueDate: assignments.dueDate,
+        maxScore: assignments.maxScore,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseCode: courses.code,
+      })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .orderBy(desc(assignments.createdAt));
+
+    res.json(allAssignments);
+  } catch (error) {
+    console.error("Error fetching assignments:", error);
+    res.status(500).json({ error: "Failed to load assignments" });
+  }
+});
+
+/**
  * GET /api/admin/attendance/summary
  * Get attendance statistics and analytics
  */

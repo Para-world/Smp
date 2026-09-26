@@ -20,6 +20,7 @@ import {
   exams,
   studentResults,
   semesterResults,
+  notifications,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
@@ -1789,3 +1790,213 @@ router.get(
 );
 
 export default router;
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+
+router.get(
+  "/announcements",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+
+      // Find courses student is enrolled in
+      const studentEnrollments = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+      
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      // Get announcements (Institution wide or for specific courses)
+      const data = await db
+        .select({
+          id: announcements.id,
+          title: announcements.title,
+          content: announcements.content,
+          category: announcements.category,
+          priority: announcements.priority,
+          isPinned: announcements.isPinned,
+          publishedAt: announcements.publishedAt,
+          courseId: announcements.courseId,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          authorName: users.name,
+        })
+        .from(announcements)
+        .leftJoin(courses, eq(announcements.courseId, courses.id))
+        .leftJoin(users, eq(announcements.authorId, users.id))
+        .where(
+          sql`${announcements.courseId} IS NULL OR ${
+            courseIds.length > 0 ? inArray(announcements.courseId, courseIds) : sql`false`
+          }`
+        )
+        .orderBy(desc(announcements.isPinned), desc(announcements.publishedAt));
+
+      res.json(data);
+    } catch (error) {
+      console.error("Fetch announcements error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.get(
+  "/announcements/:announcementId",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { announcementId } = req.params;
+      const userId = req.user!.userId;
+
+      const studentEnrollments = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+      
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      const [data] = await db
+        .select({
+          id: announcements.id,
+          title: announcements.title,
+          content: announcements.content,
+          category: announcements.category,
+          priority: announcements.priority,
+          isPinned: announcements.isPinned,
+          publishedAt: announcements.publishedAt,
+          courseId: announcements.courseId,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          authorName: users.name,
+        })
+        .from(announcements)
+        .leftJoin(courses, eq(announcements.courseId, courses.id))
+        .leftJoin(users, eq(announcements.authorId, users.id))
+        .where(
+          and(
+            eq(announcements.id, announcementId as string),
+            sql`${announcements.courseId} IS NULL OR ${
+              courseIds.length > 0 ? inArray(announcements.courseId, courseIds) : sql`false`
+            }`
+          )
+        );
+
+      if (!data) {
+        res.status(404).json({ error: "Announcement not found or unauthorized" });
+        return;
+      }
+
+      res.json(data);
+    } catch (error) {
+      console.error("Fetch announcement details error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+router.get(
+  "/notifications",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+
+      const data = await db
+        .select({
+          id: notifications.id,
+          type: notifications.type,
+          title: notifications.title,
+          message: notifications.message,
+          entityType: notifications.entityType,
+          entityId: notifications.entityId,
+          priority: notifications.priority,
+          isRead: notifications.isRead,
+          createdAt: notifications.createdAt,
+        })
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+
+      res.json(data);
+    } catch (error) {
+      console.error("Fetch notifications error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.get(
+  "/notifications/unread-count",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+
+      const [{ value }] = await db
+        .select({ value: count() })
+        .from(notifications)
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+
+      res.json({ unreadCount: value });
+    } catch (error) {
+      console.error("Fetch unread count error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/notifications/:notificationId/read",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { notificationId } = req.params;
+      const userId = req.user!.userId;
+
+      const [notification] = await db
+        .update(notifications)
+        .set({ isRead: true, readAt: new Date() })
+        .where(and(eq(notifications.id, notificationId as string), eq(notifications.userId, userId)))
+        .returning();
+
+      if (!notification) {
+        res.status(404).json({ error: "Notification not found or unauthorized" });
+        return;
+      }
+
+      res.json(notification);
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+router.patch(
+  "/notifications/read-all",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+
+      await db
+        .update(notifications)
+        .set({ isRead: true, readAt: new Date() })
+        .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark all notifications read error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);

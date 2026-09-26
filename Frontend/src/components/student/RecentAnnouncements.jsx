@@ -56,7 +56,7 @@ export default function RecentAnnouncements({ announcements }) {
         </div>
 
         <div className="space-y-4 flex-1">
-          {announcements.map((ann, index) => (
+          {announcements.slice(0, 4).map((ann, index) => (
             <motion.div
               key={ann.id || index}
               initial={{ opacity: 0, x: -10 }}

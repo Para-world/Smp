@@ -22,6 +22,9 @@ import StudentExams from './pages/student/StudentExams'
 import ExamDetail from './pages/student/ExamDetail'
 import StudentResults from './pages/student/StudentResults'
 import ResultDetail from './pages/student/ResultDetail'
+import StudentAnnouncements from './pages/student/StudentAnnouncements'
+import AnnouncementDetail from './pages/student/AnnouncementDetail'
+import StudentNotifications from './pages/student/StudentNotifications'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -234,10 +237,33 @@ function AppContent() {
             </StudentRoute>
           }
         />
+        <Route
+          path="/student/announcements"
+          element={
+            <StudentRoute>
+              <StudentAnnouncements />
+            </StudentRoute>
+          }
+        />
+        <Route
+          path="/student/announcements/:announcementId"
+          element={
+            <StudentRoute>
+              <AnnouncementDetail />
+            </StudentRoute>
+          }
+        />
+        <Route
+          path="/student/notifications"
+          element={
+            <StudentRoute>
+              <StudentNotifications />
+            </StudentRoute>
+          }
+        />
         {/* Placeholder routes for student sub-pages — will render the dashboard layout */}
         {[
-          'announcements',
-          'notifications', 'settings'
+          'settings'
         ].map((page) => (
           <Route
             key={page}

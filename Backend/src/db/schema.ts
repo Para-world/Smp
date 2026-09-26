@@ -92,6 +92,20 @@ export const resultStatusEnum = pgEnum("result_status", [
   "PENDING"
 ]);
 
+export const announcementCategoryEnum = pgEnum("announcement_category", [
+  "GENERAL", "ACADEMIC", "COURSE", "EXAM", "ASSIGNMENT", "ATTENDANCE", "TIMETABLE", "RESULT", "EVENT", "SYSTEM", "URGENT"
+]);
+
+export const priorityEnum = pgEnum("priority", ["NORMAL", "IMPORTANT", "URGENT"]);
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "ASSIGNMENT_CREATED", "ASSIGNMENT_DUE_SOON", "ASSIGNMENT_GRADED",
+  "EXAM_CREATED", "EXAM_UPDATED", "EXAM_CANCELLED", "EXAM_POSTPONED",
+  "TIMETABLE_UPDATED", "CLASS_CANCELLED", "ROOM_CHANGED",
+  "RESULT_PUBLISHED", "ATTENDANCE_WARNING", "ANNOUNCEMENT_PUBLISHED",
+  "SYSTEM"
+]);
+
 export const requestStatusEnum = pgEnum("request_status", [
   "PENDING",
   "APPROVED",
@@ -367,6 +381,8 @@ export const announcements = pgTable("announcements", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content").notNull(),
+  category: announcementCategoryEnum("category").notNull().default("GENERAL"),
+  priority: priorityEnum("priority").notNull().default("NORMAL"),
   authorId: uuid("author_id")
     .notNull()
     .references(() => users.id),
@@ -375,6 +391,22 @@ export const announcements = pgTable("announcements", {
   isPinned: boolean("is_pinned").notNull().default(false),
   publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: notificationTypeEnum("type").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  entityType: varchar("entity_type", { length: 50 }), // e.g., 'assignment', 'exam', 'announcement'
+  entityId: uuid("entity_id"),
+  priority: priorityEnum("priority").notNull().default("NORMAL"),
+  isRead: boolean("is_read").notNull().default(false),
+  readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -481,6 +513,11 @@ export const announcementsRelations = relations(announcements, ({ one }) => ({
   department: one(departments, { fields: [announcements.departmentId], references: [departments.id] }),
   course: one(courses, { fields: [announcements.courseId], references: [courses.id] }),
 }));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
 
 export const classSchedulesRelations = relations(classSchedules, ({ one }) => ({
   course: one(courses, { fields: [classSchedules.courseId], references: [courses.id] }),

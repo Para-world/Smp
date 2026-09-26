@@ -255,3 +255,86 @@ export async function fetchResultDetail(resultId) {
   return res.json();
 }
 
+// ─── Announcements ───────────────────────────────────────────────────────────
+
+export async function fetchAnnouncements() {
+  const res = await fetch(`${API_URL}/student/announcements`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load announcements');
+  }
+
+  return res.json();
+}
+
+export async function fetchAnnouncementDetail(announcementId) {
+  const res = await fetch(`${API_URL}/student/announcements/${announcementId}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load announcement details');
+  }
+
+  return res.json();
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export async function fetchNotifications() {
+  const res = await fetch(`${API_URL}/student/notifications`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load notifications');
+  }
+
+  return res.json();
+}
+
+export async function fetchUnreadNotificationCount() {
+  const res = await fetch(`${API_URL}/student/notifications/unread-count`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load unread count');
+  }
+
+  return res.json();
+}
+
+export async function markNotificationRead(notificationId) {
+  const res = await fetch(`${API_URL}/student/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to mark notification as read');
+  }
+
+  return res.json();
+}
+
+export async function markAllNotificationsRead() {
+  const res = await fetch(`${API_URL}/student/notifications/read-all`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to mark all notifications as read');
+  }
+
+  return res.json();
+}

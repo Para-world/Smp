@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function StudentHeader({ pageTitle = 'Dashboard', onMenuClick }) {
   const { user, signout } = useAuth();
@@ -48,14 +49,7 @@ export default function StudentHeader({ pageTitle = 'Dashboard', onMenuClick }) 
         {/* Right */}
         <div className="flex items-center gap-3">
           {/* Notifications */}
-          <button
-            onClick={() => navigate('/student/notifications')}
-            className="relative p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <Bell size={20} />
-            {/* Notification dot */}
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0B1120]" />
-          </button>
+          <NotificationDropdown />
 
           {/* Profile dropdown */}
           <DropdownMenu>

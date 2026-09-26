@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format } from 'date-fns';
 import { FileText, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminSidebar from '../../components/admin/AdminSidebar';
 
-export default function AdminAssignments({ mobileOpen, setMobileOpen }) {
+export default function AdminAssignments() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,12 +34,24 @@ export default function AdminAssignments({ mobileOpen, setMobileOpen }) {
         mobileOpen ? 'overflow-hidden h-screen' : ''
       }`}
     >
-      <AdminHeader
-        pageTitle="Assignment Overview"
-        onMenuClick={() => setMobileOpen(true)}
+      <AdminSidebar
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
       />
 
-      <main className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px] mx-auto">
+      <div
+        className={`transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+        }`}
+      >
+        <AdminHeader
+          pageTitle="Assignment Overview"
+          onMenuClick={() => setMobileOpen(true)}
+        />
+
+        <main className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px] mx-auto">
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Assignments</h1>
@@ -93,6 +108,7 @@ export default function AdminAssignments({ mobileOpen, setMobileOpen }) {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

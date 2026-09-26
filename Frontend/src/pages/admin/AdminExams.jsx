@@ -9,8 +9,12 @@ import { Plus, Search, Calendar, MapPin, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AdminHeader from '../../components/admin/AdminHeader';
+import AdminSidebar from '../../components/admin/AdminSidebar';
 
 export default function AdminExams() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,18 +62,39 @@ export default function AdminExams() {
   const sortedDates = Object.keys(groupedExams).sort();
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Exam Schedule</h1>
-          <p className="text-slate-500 dark:text-slate-400">Manage institutional examination schedule</p>
+    <div className={`min-h-screen bg-slate-50 dark:bg-[#050811] transition-colors ${
+        mobileOpen ? 'overflow-hidden h-screen' : ''
+      }`}
+    >
+      <AdminSidebar
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
+
+      <div
+        className={`transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+        }`}
+      >
+        <AdminHeader
+          pageTitle="Exam Schedule"
+          onMenuClick={() => setMobileOpen(true)}
+        />
+
+        <main className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px] mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Exam Schedule</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Manage institutional examination schedule</p>
+          </div>
+          <Link to="/admin/exams/create">
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Schedule Exam
+            </Button>
+          </Link>
         </div>
-        <Link to="/admin/exams/create">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Schedule Exam
-          </Button>
-        </Link>
-      </div>
 
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b gap-4">
@@ -212,6 +237,8 @@ export default function AdminExams() {
           </Tabs>
         </CardContent>
       </Card>
+      </main>
+      </div>
     </div>
   );
 }

@@ -37,6 +37,7 @@ import AdminCourseDetail from './pages/admin/AdminCourseDetail'
 import AdminEnrollments from './pages/admin/AdminEnrollments'
 import AdminAttendance from './pages/admin/AdminAttendance'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
+import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
 import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
 import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
@@ -444,6 +445,14 @@ function AppContent() {
         />
 
         {/* Faculty Routes */}
+        <Route
+          path="/faculty/dashboard"
+          element={
+            <FacultyRoute>
+              <FacultyDashboard />
+            </FacultyRoute>
+          }
+        />
         <Route
           path="/faculty/assignments"
           element={

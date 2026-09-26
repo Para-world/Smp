@@ -99,7 +99,7 @@ router.get("/students", requirePermission(PERMISSIONS.STUDENTS_READ), async (req
 
     const offset = (page - 1) * limit;
 
-    let conditions = [eq(users.role, "student")];
+    let conditions: any[] = [eq(users.role, "student")];
 
     if (search) {
       conditions.push(
@@ -165,7 +165,7 @@ router.get("/students", requirePermission(PERMISSIONS.STUDENTS_READ), async (req
  */
 router.get("/students/:studentId", requirePermission(PERMISSIONS.STUDENTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { studentId } = req.params;
+    const studentId = req.params.studentId as string;
 
     const [user] = await db.select().from(users).where(and(eq(users.id, studentId), eq(users.role, "student")));
     
@@ -255,7 +255,7 @@ router.get("/instructors", requirePermission(PERMISSIONS.FACULTY_READ), async (r
 
     const offset = (page - 1) * limit;
 
-    let conditions = [eq(users.role, "faculty")];
+    let conditions: any[] = [eq(users.role, "faculty")];
 
     if (search) {
       conditions.push(
@@ -318,7 +318,7 @@ router.get("/instructors", requirePermission(PERMISSIONS.FACULTY_READ), async (r
  */
 router.get("/instructors/:instructorId", requirePermission(PERMISSIONS.FACULTY_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { instructorId } = req.params;
+    const instructorId = req.params.instructorId as string;
 
     const [user] = await db.select().from(users).where(and(eq(users.id, instructorId), eq(users.role, "faculty")));
     
@@ -346,7 +346,7 @@ router.get("/courses", requirePermission(PERMISSIONS.COURSES_READ), async (req: 
 
     const offset = (page - 1) * limit;
 
-    let conditions = [];
+    let conditions: any[] = [];
 
     if (search) {
       conditions.push(
@@ -401,7 +401,7 @@ router.get("/courses", requirePermission(PERMISSIONS.COURSES_READ), async (req: 
  */
 router.get("/courses/:courseId", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { courseId } = req.params;
+    const courseId = req.params.courseId as string;
 
     const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
     

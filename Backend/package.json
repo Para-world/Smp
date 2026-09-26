@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
+    "bcrypt": "^6.0.0",
     "better-auth": "^1.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -26,6 +27,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/multer": "^2.2.0",

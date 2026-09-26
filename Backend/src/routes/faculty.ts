@@ -46,7 +46,7 @@ router.get("/dashboard", requirePermission(PERMISSIONS.COURSES_READ), async (req
  */
 router.get("/courses/:courseId/attendance-roster", requirePermission(PERMISSIONS.ATTENDANCE_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { courseId } = req.params;
+    const courseId = req.params.courseId as string;
     const facultyId = req.user!.userId;
 
     // Verify course belongs to this faculty
@@ -80,7 +80,7 @@ router.get("/courses/:courseId/attendance-roster", requirePermission(PERMISSIONS
  */
 router.post("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTENDANCE_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { courseId } = req.params;
+    const courseId = req.params.courseId as string;
     const facultyId = req.user!.userId;
     const { date, records } = req.body; 
     // records: Array of { studentId, status }

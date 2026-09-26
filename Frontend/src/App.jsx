@@ -30,6 +30,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminStudents from './pages/admin/AdminStudents'
 import AdminStudentDetail from './pages/admin/AdminStudentDetail'
 import AdminStudentCreate from './pages/admin/AdminStudentCreate'
+import AdminStudentBulkImport from './pages/admin/AdminStudentBulkImport'
 import AdminInstructors from './pages/admin/AdminInstructors'
 import AdminInstructorDetail from './pages/admin/AdminInstructorDetail'
 import AdminCourses from './pages/admin/AdminCourses'
@@ -385,6 +386,14 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminStudentCreate />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/students/bulk-import"
+          element={
+            <AdminRoute>
+              <AdminStudentBulkImport />
             </AdminRoute>
           }
         />

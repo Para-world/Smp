@@ -93,10 +93,10 @@ export default function AdminStudents() {
             </div>
             
             <div className="flex items-center gap-3">
-              <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <Link to="/admin/students/bulk-import" className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                 <Upload size={16} />
                 Bulk Import
-              </button>
+              </Link>
               <Link to="/admin/students/create" className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm">
                 <Plus size={16} />
                 Add Student

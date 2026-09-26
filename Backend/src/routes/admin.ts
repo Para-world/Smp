@@ -273,6 +273,68 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
 });
 
 /**
+ * POST /api/admin/students/bulk-import
+ * Bulk import students
+ */
+router.post("/students/bulk-import", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { students } = req.body;
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      res.status(400).json({ error: "No students provided for import" });
+      return;
+    }
+
+    const defaultPassword = "ChangeMe123!";
+    const passwordHash = await bcrypt.hash(defaultPassword, 10);
+    const results = { successful: 0, failed: 0, errors: [] as any[] };
+
+    for (let i = 0; i < students.length; i++) {
+      const row = students[i];
+      try {
+        if (!row.firstName || !row.lastName || !row.email) {
+          throw new Error("Missing required fields (firstName, lastName, email)");
+        }
+
+        const existingUser = await db.select().from(users).where(eq(users.email, row.email));
+        if (existingUser.length > 0) {
+          throw new Error("Email already in use");
+        }
+
+        await db.transaction(async (tx) => {
+          const [newUser] = await tx.insert(users).values({
+            email: row.email,
+            name: `${row.firstName} ${row.lastName}`,
+            passwordHash,
+            role: "student",
+            isActive: true,
+          }).returning();
+
+          await tx.insert(studentProfiles).values({
+            userId: newUser.id,
+            program: row.program || null,
+            semester: row.semester ? parseInt(row.semester) : null,
+            department: row.department || null,
+            academicYear: row.academicYear || null,
+            status: "active",
+            enrollmentDate: new Date().toISOString(),
+          });
+        });
+
+        results.successful++;
+      } catch (err: any) {
+        results.failed++;
+        results.errors.push({ row: i + 1, email: row.email, error: err.message });
+      }
+    }
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error in bulk import:", error);
+    res.status(500).json({ error: "Failed to process bulk import" });
+  }
+});
+
+/**
  * GET /api/admin/instructors
  * List faculty with pagination, search, filter
  */

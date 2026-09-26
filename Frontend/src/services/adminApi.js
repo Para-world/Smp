@@ -197,3 +197,16 @@ export const removeAdminEnrollment = async (id) => {
   }
   return response.json();
 };
+
+export const bulkImportStudents = async (data) => {
+  const response = await fetch(`${API_URL}/admin/students/bulk-import`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to bulk import students');
+  }
+  return response.json();
+};

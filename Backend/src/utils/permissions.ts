@@ -129,6 +129,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
  * Helper function to check if a role has a specific permission
  */
 export function hasPermission(role: string, permission: Permission): boolean {
+  if (role === 'super_admin') return true;
   if (!ROLE_PERMISSIONS[role]) return false;
   return ROLE_PERMISSIONS[role].includes(permission);
 }

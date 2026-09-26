@@ -165,7 +165,10 @@ router.post("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTEN
 router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const facultyId = req.user!.userId;
-    const { title, courseId, description, dueDate, maxScore, weight } = req.body;
+    const { 
+      title, courseId, description, instructions, attachments,
+      dueDate, maxScore, weight, allowLateSubmission, allowResubmission, maxAttempts
+    } = req.body;
 
     if (!title || !courseId) {
       res.status(400).json({ error: "Title and Course ID are required" });
@@ -183,9 +186,14 @@ router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), a
       courseId,
       title,
       description,
+      instructions,
+      attachments,
       dueDate: dueDate ? new Date(dueDate) : null,
       maxScore: maxScore || "100",
       weight: weight || "1",
+      allowLateSubmission: allowLateSubmission || false,
+      allowResubmission: allowResubmission || false,
+      maxAttempts: maxAttempts ? parseInt(maxAttempts) : 1,
       isPublished: true, // Assuming published immediately for simplicity
     }).returning();
 

@@ -338,10 +338,15 @@ export const assignments = pgTable("assignments", {
     .references(() => courses.id),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  instructions: text("instructions"),
+  attachments: text("attachments"), // comma separated URLs or JSON string
   type: assignmentTypeEnum("type").notNull().default("homework"),
   maxScore: numeric("max_score", { precision: 5, scale: 2 }).notNull().default("100"),
   weight: numeric("weight", { precision: 5, scale: 2 }).notNull().default("1"),
   dueDate: timestamp("due_date", { withTimezone: true }),
+  allowLateSubmission: boolean("allow_late_submission").notNull().default(false),
+  allowResubmission: boolean("allow_resubmission").notNull().default(false),
+  maxAttempts: integer("max_attempts").notNull().default(1),
   isPublished: boolean("is_published").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -359,6 +364,8 @@ export const submissions = pgTable("submissions", {
   status: submissionStatusEnum("status").notNull().default("submitted"),
   content: text("content"),
   fileUrl: varchar("file_url", { length: 500 }),
+  attempt: integer("attempt").notNull().default(1),
+  isLate: boolean("is_late").notNull().default(false),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

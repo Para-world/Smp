@@ -19,9 +19,14 @@ export default function FacultyAssignmentCreate() {
     title: '',
     courseId: '',
     description: '',
+    instructions: '',
     dueDate: '',
     maxScore: '100',
     weight: '1',
+    attachments: '',
+    allowLateSubmission: false,
+    allowResubmission: false,
+    maxAttempts: 1,
   });
 
   useEffect(() => {
@@ -38,8 +43,11 @@ export default function FacultyAssignmentCreate() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   const handleSelectChange = (name, value) => {
@@ -119,13 +127,38 @@ export default function FacultyAssignmentCreate() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Instructions / Description</Label>
+              <Label htmlFor="description">Short Description</Label>
               <Textarea
                 id="description"
                 name="description"
-                placeholder="Provide detailed instructions..."
-                rows={5}
+                placeholder="Brief summary of the assignment"
                 value={formData.description}
+                onChange={handleInputChange}
+                className="resize-none"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instructions">Detailed Instructions</Label>
+              <Textarea
+                id="instructions"
+                name="instructions"
+                placeholder="Provide detailed instructions, rubrics, and expectations..."
+                value={formData.instructions}
+                onChange={handleInputChange}
+                className="resize-none min-h-[120px]"
+                rows={6}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="attachments">Attachments (URLs separated by comma)</Label>
+              <Input
+                id="attachments"
+                name="attachments"
+                placeholder="https://link-to-file.pdf, https://link-to-dataset.csv"
+                value={formData.attachments}
                 onChange={handleInputChange}
               />
             </div>
@@ -169,6 +202,57 @@ export default function FacultyAssignmentCreate() {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Late Submission</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="allowLateSubmission"
+                    name="allowLateSubmission"
+                    checked={formData.allowLateSubmission}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="allowLateSubmission" className="font-normal cursor-pointer text-sm">
+                    Allow late submission
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Resubmission</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="allowResubmission"
+                    name="allowResubmission"
+                    checked={formData.allowResubmission}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="allowResubmission" className="font-normal cursor-pointer text-sm">
+                    Allow resubmission
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="maxAttempts" className="text-sm font-semibold">Max Attempts</Label>
+                <Input
+                  id="maxAttempts"
+                  name="maxAttempts"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.maxAttempts}
+                  onChange={handleInputChange}
+                  disabled={!formData.allowResubmission}
+                  className="max-w-[120px]"
+                />
+              </div>
+            </div>
+
           </CardContent>
           <CardFooter className="flex justify-end gap-4 border-t pt-6 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
             <Link to="/faculty/assignments">

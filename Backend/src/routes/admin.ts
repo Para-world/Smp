@@ -11,6 +11,7 @@ import {
   grades,
   studentResults,
   semesters,
+  resultAuditLogs,
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -1015,6 +1016,11 @@ router.post("/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (re
 
     let result;
     if (existing.length > 0) {
+      if (existing[0].status === 'PUBLISHED' && !req.body.reason) {
+        res.status(403).json({ error: "Cannot modify a PUBLISHED result without providing a reason." });
+        return;
+      }
+      
       [result] = await db.update(studentResults).set({
         internalMarks: internalMarks !== undefined ? parseInt(internalMarks, 10) : existing[0].internalMarks,
         externalMarks: externalMarks !== undefined ? parseInt(externalMarks, 10) : existing[0].externalMarks,
@@ -1025,6 +1031,15 @@ router.post("/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (re
         status: status || existing[0].status,
         updatedAt: new Date()
       }).where(eq(studentResults.id, existing[0].id)).returning();
+
+      await db.insert(resultAuditLogs).values({
+        resultId: result.id,
+        changedBy: req.user!.userId,
+        changeType: "MARKS_CHANGE",
+        oldValue: existing[0],
+        newValue: result,
+        reason: req.body.reason || "Marks updated manually",
+      });
     } else {
       [result] = await db.insert(studentResults).values({
         studentId,
@@ -1039,6 +1054,15 @@ router.post("/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (re
         gradePoint: gradePoint ? parseInt(gradePoint, 10) : null,
         status: status || 'DRAFT'
       }).returning();
+
+      await db.insert(resultAuditLogs).values({
+        resultId: result.id,
+        changedBy: req.user!.userId,
+        changeType: "INITIAL_ENTRY",
+        oldValue: null,
+        newValue: result,
+        reason: "Initial result entry",
+      });
     }
 
     res.json(result);
@@ -1055,19 +1079,159 @@ router.post("/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (re
 router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { status } = req.body;
+
+    const [existing] = await db.select().from(studentResults).where(eq(studentResults.id, req.params.id as string));
+    if (!existing) {
+       res.status(404).json({ error: "Not found" });
+       return;
+    }
+
     const [result] = await db.update(studentResults).set({
       status,
       updatedAt: new Date(),
       publishedAt: status === 'PUBLISHED' ? new Date() : undefined
     }).where(eq(studentResults.id, req.params.id as string)).returning();
     
-    if (!result) {
-       res.status(404).json({ error: "Not found" });
-       return;
-    }
+    await db.insert(resultAuditLogs).values({
+      resultId: result.id,
+      changedBy: req.user!.userId,
+      changeType: "STATUS_CHANGE",
+      oldValue: { status: existing.status },
+      newValue: { status: result.status },
+      reason: req.body.reason || `Status changed to ${status}`,
+    });
+
     res.json(result);
   } catch(error) {
     res.status(500).json({ error: "Failed to update" });
+  }
+});
+
+/**
+ * POST /api/admin/results/bulk-import
+ * Bulk import results
+ */
+router.post("/results/bulk-import", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { results, semesterId, academicYear } = req.body;
+    
+    if (!Array.isArray(results) || results.length === 0) {
+      res.status(400).json({ error: "Invalid data format. Expected an array of results." });
+      return;
+    }
+
+    let imported = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (const row of results) {
+      try {
+        const { studentId, courseCode, internalMarks, externalMarks, practicalMarks, totalMarks, grade, gradePoint } = row;
+        
+        // Find course
+        const [course] = await db.select({ id: courses.id }).from(courses).where(eq(courses.code, courseCode));
+        if (!course) {
+          skipped++;
+          errors.push(`Course ${courseCode} not found for student ${studentId}`);
+          continue;
+        }
+
+        // Find existing result
+        const existing = await db.select().from(studentResults).where(and(
+          eq(studentResults.studentId, studentId),
+          eq(studentResults.courseId, course.id),
+          eq(studentResults.semesterId, semesterId)
+        ));
+
+        let savedResult;
+        if (existing.length > 0) {
+          if (existing[0].status === 'PUBLISHED') {
+            skipped++;
+            errors.push(`Skipped ${studentId}: result already PUBLISHED.`);
+            continue;
+          }
+
+          [savedResult] = await db.update(studentResults).set({
+            internalMarks: internalMarks !== undefined ? parseInt(internalMarks, 10) : existing[0].internalMarks,
+            externalMarks: externalMarks !== undefined ? parseInt(externalMarks, 10) : existing[0].externalMarks,
+            practicalMarks: practicalMarks !== undefined ? parseInt(practicalMarks, 10) : existing[0].practicalMarks,
+            totalMarks: totalMarks !== undefined ? parseInt(totalMarks, 10) : existing[0].totalMarks,
+            grade: grade || existing[0].grade,
+            gradePoint: gradePoint !== undefined ? parseInt(gradePoint, 10) : existing[0].gradePoint,
+            updatedAt: new Date()
+          }).where(eq(studentResults.id, existing[0].id)).returning();
+
+          await db.insert(resultAuditLogs).values({
+            resultId: savedResult.id,
+            changedBy: req.user!.userId,
+            changeType: "BULK_IMPORT_UPDATE",
+            oldValue: existing[0],
+            newValue: savedResult,
+            reason: "Bulk import",
+          });
+        } else {
+          [savedResult] = await db.insert(studentResults).values({
+            studentId,
+            courseId: course.id,
+            semesterId,
+            academicYear,
+            internalMarks: internalMarks ? parseInt(internalMarks, 10) : null,
+            externalMarks: externalMarks ? parseInt(externalMarks, 10) : null,
+            practicalMarks: practicalMarks ? parseInt(practicalMarks, 10) : null,
+            totalMarks: totalMarks ? parseInt(totalMarks, 10) : null,
+            grade,
+            gradePoint: gradePoint ? parseInt(gradePoint, 10) : null,
+            status: 'DRAFT'
+          }).returning();
+
+          await db.insert(resultAuditLogs).values({
+            resultId: savedResult.id,
+            changedBy: req.user!.userId,
+            changeType: "BULK_IMPORT_CREATE",
+            oldValue: null,
+            newValue: savedResult,
+            reason: "Bulk import",
+          });
+        }
+        imported++;
+      } catch (err) {
+        skipped++;
+        errors.push(`Error processing student ${row.studentId}: ${(err as Error).message}`);
+      }
+    }
+
+    res.json({ imported, skipped, errors });
+  } catch (error) {
+    console.error("Error bulk importing results:", error);
+    res.status(500).json({ error: "Failed to bulk import results" });
+  }
+});
+
+/**
+ * GET /api/admin/results/:id/audit
+ * Get audit logs for a result
+ */
+router.get("/results/:id/audit", requirePermission(PERMISSIONS.RESULTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const logs = await db
+      .select({
+        id: resultAuditLogs.id,
+        changeType: resultAuditLogs.changeType,
+        oldValue: resultAuditLogs.oldValue,
+        newValue: resultAuditLogs.newValue,
+        reason: resultAuditLogs.reason,
+        createdAt: resultAuditLogs.createdAt,
+        changedBy: users.name,
+      })
+      .from(resultAuditLogs)
+      .leftJoin(users, eq(resultAuditLogs.changedBy, users.id))
+      .where(eq(resultAuditLogs.resultId, req.params.id as string))
+      .orderBy(desc(resultAuditLogs.createdAt));
+
+    res.json(logs);
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
   }
 });
 

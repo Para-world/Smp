@@ -39,6 +39,7 @@ export default function AdminResultCreate({ mobileOpen, setMobileOpen }) {
     grade: '',
     gradePoint: '',
     status: 'DRAFT',
+    reason: '',
   });
 
   useEffect(() => {
@@ -276,6 +277,12 @@ export default function AdminResultCreate({ mobileOpen, setMobileOpen }) {
                           </SelectContent>
                         </Select>
                       </div>
+                      {isEditing && (
+                        <div className="space-y-2 md:w-2/3">
+                          <Label>Reason for Update (Required if Published)</Label>
+                          <Input name="reason" value={formData.reason} onChange={handleInputChange} placeholder="E.g., Correction after review" />
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

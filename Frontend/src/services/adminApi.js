@@ -247,15 +247,39 @@ export const createAdminResult = async (data) => {
   return response.json();
 };
 
-export const updateAdminResultStatus = async (id, status) => {
+export const updateAdminResultStatus = async (id, status, reason) => {
   const response = await fetch(`${API_URL}/admin/results/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, reason }),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to update result status');
+  }
+  return response.json();
+};
+
+export const bulkImportResults = async (data) => {
+  const response = await fetch(`${API_URL}/admin/results/bulk-import`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to bulk import results');
+  }
+  return response.json();
+};
+
+export const fetchResultAuditLogs = async (id) => {
+  const response = await fetch(`${API_URL}/admin/results/${id}/audit`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch audit logs');
   }
   return response.json();
 };

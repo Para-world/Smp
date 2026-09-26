@@ -42,6 +42,7 @@ import AdminExams from './pages/admin/AdminExams'
 import AdminExamCreate from './pages/admin/AdminExamCreate'
 import AdminResults from './pages/admin/AdminResults'
 import AdminResultCreate from './pages/admin/AdminResultCreate'
+import AdminResultBulkImport from './pages/admin/AdminResultBulkImport'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -497,6 +498,14 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminResultCreate />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/results/import"
+          element={
+            <AdminRoute>
+              <AdminResultBulkImport />
             </AdminRoute>
           }
         />

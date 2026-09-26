@@ -9,6 +9,7 @@ import {
   date,
   numeric,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -476,6 +477,17 @@ export const semesterResults = pgTable("semester_results", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const resultAuditLogs = pgTable("result_audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  resultId: uuid("result_id").notNull().references(() => studentResults.id, { onDelete: "cascade" }),
+  changedBy: uuid("changed_by").notNull().references(() => users.id),
+  changeType: varchar("change_type", { length: 50 }).notNull(), // e.g. 'STATUS_CHANGE', 'MARKS_CHANGE'
+  oldValue: jsonb("old_value"),
+  newValue: jsonb("new_value"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -573,4 +585,9 @@ export const studentResultsRelations = relations(studentResults, ({ one }) => ({
 export const semesterResultsRelations = relations(semesterResults, ({ one }) => ({
   student: one(users, { fields: [semesterResults.studentId], references: [users.id] }),
   semester: one(semesters, { fields: [semesterResults.semesterId], references: [semesters.id] }),
+}));
+
+export const resultAuditLogsRelations = relations(resultAuditLogs, ({ one }) => ({
+  result: one(studentResults, { fields: [resultAuditLogs.resultId], references: [studentResults.id] }),
+  changer: one(users, { fields: [resultAuditLogs.changedBy], references: [users.id] }),
 }));

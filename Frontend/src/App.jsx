@@ -36,6 +36,8 @@ import AdminInstructorDetail from './pages/admin/AdminInstructorDetail'
 import AdminCourses from './pages/admin/AdminCourses'
 import AdminCourseDetail from './pages/admin/AdminCourseDetail'
 import AdminEnrollments from './pages/admin/AdminEnrollments'
+import AdminAttendance from './pages/admin/AdminAttendance'
+import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -427,6 +429,25 @@ function AppContent() {
             <AdminRoute>
               <AdminEnrollments />
             </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/attendance"
+          element={
+            <AdminRoute>
+              <AdminAttendance />
+            </AdminRoute>
+          }
+        />
+
+        {/* Faculty Routes */}
+        <Route
+          path="/faculty/courses/:courseId/attendance"
+          element={
+            <FacultyRoute>
+              <FacultyAttendanceMarking />
+            </FacultyRoute>
           }
         />
 

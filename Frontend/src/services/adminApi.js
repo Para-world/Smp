@@ -112,3 +112,26 @@ export const fetchAdminEnrollments = async (params = {}) => {
   }
   return response.json();
 };
+
+export const fetchAdminAttendance = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_URL}/admin/attendance?${query}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch attendance');
+  }
+  return response.json();
+};
+
+export const fetchAdminAttendanceSummary = async (threshold = 75) => {
+  const response = await fetch(`${API_URL}/admin/attendance/summary?threshold=${threshold}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch attendance summary');
+  }
+  return response.json();
+};

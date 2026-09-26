@@ -495,6 +495,79 @@ router.get("/enrollments", requirePermission(PERMISSIONS.ENROLLMENTS_READ), asyn
 });
 
 /**
+ * POST /api/admin/enrollments
+ * Enroll student in a course
+ */
+router.post("/enrollments", requirePermission(PERMISSIONS.ENROLLMENTS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { studentId, courseId } = req.body;
+
+    if (!studentId || !courseId) {
+      res.status(400).json({ error: "Student ID and Course ID are required" });
+      return;
+    }
+
+    // Validate student exists
+    const [student] = await db.select().from(users).where(and(eq(users.id, studentId), eq(users.role, "student")));
+    if (!student) {
+      res.status(404).json({ error: "Student not found" });
+      return;
+    }
+
+    // Validate course exists
+    const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
+    if (!course) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+
+    // Prevent duplicate enrollment
+    const [existing] = await db.select().from(enrollments).where(and(
+      eq(enrollments.studentId, studentId),
+      eq(enrollments.courseId, courseId)
+    ));
+
+    if (existing) {
+      res.status(400).json({ error: "Student is already enrolled in this course" });
+      return;
+    }
+
+    // Create enrollment
+    const [newEnrollment] = await db.insert(enrollments).values({
+      studentId,
+      courseId,
+      status: "enrolled",
+    }).returning();
+
+    res.status(201).json({ message: "Student enrolled successfully", enrollment: newEnrollment });
+  } catch (error) {
+    console.error("Error creating enrollment:", error);
+    res.status(500).json({ error: "Failed to enroll student" });
+  }
+});
+
+/**
+ * DELETE /api/admin/enrollments/:id
+ * Remove an enrollment
+ */
+router.delete("/enrollments/:id", requirePermission(PERMISSIONS.ENROLLMENTS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const [deleted] = await db.delete(enrollments).where(eq(enrollments.id, id)).returning();
+    if (!deleted) {
+      res.status(404).json({ error: "Enrollment not found" });
+      return;
+    }
+
+    res.json({ message: "Enrollment removed successfully" });
+  } catch (error) {
+    console.error("Error removing enrollment:", error);
+    res.status(500).json({ error: "Failed to remove enrollment" });
+  }
+});
+
+/**
  * GET /api/admin/attendance/summary
  * Get attendance statistics and analytics
  */

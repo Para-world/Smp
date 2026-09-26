@@ -172,3 +172,28 @@ export const updateAdminExam = async (id, data) => {
   }
   return response.json();
 };
+
+export const createAdminEnrollment = async (data) => {
+  const response = await fetch(`${API_URL}/admin/enrollments`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to enroll student');
+  }
+  return response.json();
+};
+
+export const removeAdminEnrollment = async (id) => {
+  const response = await fetch(`${API_URL}/admin/enrollments/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to remove enrollment');
+  }
+  return response.json();
+};

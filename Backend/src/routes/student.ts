@@ -248,7 +248,7 @@ router.get(
         .from(semesterResults)
         .where(and(
           eq(semesterResults.studentId, userId),
-          eq(semesterResults.status, 'PASS')
+          eq(semesterResults.status, 'PUBLISHED')
         ));
         
       if (semResults.length > 0) {
@@ -275,7 +275,10 @@ router.get(
         })
         .from(studentResults)
         .innerJoin(courses, eq(studentResults.courseId, courses.id))
-        .where(eq(studentResults.studentId, userId))
+        .where(and(
+          eq(studentResults.studentId, userId),
+          eq(studentResults.status, 'PUBLISHED')
+        ))
         .orderBy(desc(studentResults.publishedAt))
         .limit(1);
 
@@ -1679,7 +1682,7 @@ router.get(
         .innerJoin(semesters, eq(semesterResults.semesterId, semesters.id))
         .where(and(
           eq(semesterResults.studentId, userId),
-          eq(semesterResults.status, "PASS") // Or whatever criteria
+          eq(semesterResults.status, "PUBLISHED")
         ))
         .orderBy(desc(semesters.startDate));
 
@@ -1702,7 +1705,10 @@ router.get(
         })
         .from(studentResults)
         .innerJoin(courses, eq(studentResults.courseId, courses.id))
-        .where(eq(studentResults.studentId, userId));
+        .where(and(
+          eq(studentResults.studentId, userId),
+          eq(studentResults.status, "PUBLISHED")
+        ));
 
       // Calculate CGPA dynamically if we want, or derive from semester results
       let totalGradePoints = 0;
@@ -1775,7 +1781,8 @@ router.get(
         .innerJoin(semesters, eq(studentResults.semesterId, semesters.id))
         .where(and(
           eq(studentResults.id, resultId as string),
-          eq(studentResults.studentId, userId)
+          eq(studentResults.studentId, userId),
+          eq(studentResults.status, "PUBLISHED")
         ));
 
       if (!result) {

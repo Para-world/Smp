@@ -85,11 +85,13 @@ export const examStatusEnum = pgEnum("exam_status", [
 ]);
 
 export const resultStatusEnum = pgEnum("result_status", [
-  "PASS",
-  "FAIL",
-  "ABSENT",
+  "DRAFT",
+  "PENDING_REVIEW",
+  "PUBLISHED",
   "WITHHELD",
-  "PENDING"
+  "PASS", // keep for backward compatibility or final grading
+  "FAIL",
+  "ABSENT"
 ]);
 
 export const announcementCategoryEnum = pgEnum("announcement_category", [
@@ -454,7 +456,7 @@ export const studentResults = pgTable("student_results", {
   grade: varchar("grade", { length: 5 }), // e.g. "A+", "B"
   gradePoint: integer("grade_point"), // e.g. 9, 8
   credits: integer("credits"),
-  status: resultStatusEnum("status").notNull().default("PENDING"),
+  status: resultStatusEnum("status").notNull().default("DRAFT"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -468,7 +470,7 @@ export const semesterResults = pgTable("semester_results", {
   sgpa: varchar("sgpa", { length: 10 }), // Stored as string to handle precision like "8.61"
   totalCredits: integer("total_credits"),
   earnedCredits: integer("earned_credits"),
-  status: resultStatusEnum("status").notNull().default("PENDING"),
+  status: resultStatusEnum("status").notNull().default("DRAFT"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

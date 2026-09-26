@@ -9,6 +9,8 @@ import {
   exams,
   assignments,
   grades,
+  studentResults,
+  semesters,
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -944,6 +946,128 @@ router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req
   } catch (error) {
     console.error("Error updating exam:", error);
     res.status(500).json({ error: "Failed to update exam" });
+  }
+});
+
+/**
+ * GET /api/admin/results
+ * Get all results with optional filtering
+ */
+router.get("/results", requirePermission(PERMISSIONS.RESULTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { courseId, semesterId } = req.query;
+
+    const conditions = [];
+    if (courseId) conditions.push(eq(studentResults.courseId, courseId as string));
+    if (semesterId) conditions.push(eq(studentResults.semesterId, semesterId as string));
+
+    const results = await db
+      .select({
+        id: studentResults.id,
+        courseId: studentResults.courseId,
+        semesterId: studentResults.semesterId,
+        studentId: studentResults.studentId,
+        internalMarks: studentResults.internalMarks,
+        externalMarks: studentResults.externalMarks,
+        practicalMarks: studentResults.practicalMarks,
+        totalMarks: studentResults.totalMarks,
+        grade: studentResults.grade,
+        gradePoint: studentResults.gradePoint,
+        status: studentResults.status,
+        studentName: users.name,
+        studentEmail: users.email,
+        courseCode: courses.code,
+        courseTitle: courses.title,
+      })
+      .from(studentResults)
+      .innerJoin(users, eq(studentResults.studentId, users.id))
+      .leftJoin(studentProfiles, eq(users.id, studentProfiles.userId))
+      .innerJoin(courses, eq(studentResults.courseId, courses.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(studentResults.updatedAt));
+
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching results:", error);
+    res.status(500).json({ error: "Failed to load results" });
+  }
+});
+
+/**
+ * POST /api/admin/results
+ * Create or Update result
+ */
+router.post("/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { studentId, courseId, semesterId, academicYear, internalMarks, externalMarks, practicalMarks, totalMarks, grade, gradePoint, status } = req.body;
+    
+    if (!studentId || !courseId || !semesterId) {
+      res.status(400).json({ error: "studentId, courseId, semesterId are required" });
+      return;
+    }
+
+    // Check if exists
+    const existing = await db.select().from(studentResults).where(and(
+      eq(studentResults.studentId, studentId),
+      eq(studentResults.courseId, courseId),
+      eq(studentResults.semesterId, semesterId)
+    ));
+
+    let result;
+    if (existing.length > 0) {
+      [result] = await db.update(studentResults).set({
+        internalMarks: internalMarks !== undefined ? parseInt(internalMarks, 10) : existing[0].internalMarks,
+        externalMarks: externalMarks !== undefined ? parseInt(externalMarks, 10) : existing[0].externalMarks,
+        practicalMarks: practicalMarks !== undefined ? parseInt(practicalMarks, 10) : existing[0].practicalMarks,
+        totalMarks: totalMarks !== undefined ? parseInt(totalMarks, 10) : existing[0].totalMarks,
+        grade: grade || existing[0].grade,
+        gradePoint: gradePoint !== undefined ? parseInt(gradePoint, 10) : existing[0].gradePoint,
+        status: status || existing[0].status,
+        updatedAt: new Date()
+      }).where(eq(studentResults.id, existing[0].id)).returning();
+    } else {
+      [result] = await db.insert(studentResults).values({
+        studentId,
+        courseId,
+        semesterId,
+        academicYear,
+        internalMarks: internalMarks ? parseInt(internalMarks, 10) : null,
+        externalMarks: externalMarks ? parseInt(externalMarks, 10) : null,
+        practicalMarks: practicalMarks ? parseInt(practicalMarks, 10) : null,
+        totalMarks: totalMarks ? parseInt(totalMarks, 10) : null,
+        grade,
+        gradePoint: gradePoint ? parseInt(gradePoint, 10) : null,
+        status: status || 'DRAFT'
+      }).returning();
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error saving result:", error);
+    res.status(500).json({ error: "Failed to save result" });
+  }
+});
+
+/**
+ * PUT /api/admin/results/:id
+ * Update result status
+ */
+router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { status } = req.body;
+    const [result] = await db.update(studentResults).set({
+      status,
+      updatedAt: new Date(),
+      publishedAt: status === 'PUBLISHED' ? new Date() : undefined
+    }).where(eq(studentResults.id, req.params.id as string)).returning();
+    
+    if (!result) {
+       res.status(404).json({ error: "Not found" });
+       return;
+    }
+    res.json(result);
+  } catch(error) {
+    res.status(500).json({ error: "Failed to update" });
   }
 });
 

@@ -40,6 +40,8 @@ import AdminAttendance from './pages/admin/AdminAttendance'
 import AdminAssignments from './pages/admin/AdminAssignments'
 import AdminExams from './pages/admin/AdminExams'
 import AdminExamCreate from './pages/admin/AdminExamCreate'
+import AdminResults from './pages/admin/AdminResults'
+import AdminResultCreate from './pages/admin/AdminResultCreate'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -479,6 +481,30 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminExamCreate />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/results"
+          element={
+            <AdminRoute>
+              <AdminResults />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/results/create"
+          element={
+            <AdminRoute>
+              <AdminResultCreate />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/results/:id/edit"
+          element={
+            <AdminRoute>
+              <AdminResultCreate />
             </AdminRoute>
           }
         />

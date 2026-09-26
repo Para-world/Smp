@@ -221,3 +221,41 @@ export const fetchAdminAssignments = async () => {
   }
   return response.json();
 };
+
+export const fetchAdminResults = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_URL}/admin/results?${query}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch results');
+  }
+  return response.json();
+};
+
+export const createAdminResult = async (data) => {
+  const response = await fetch(`${API_URL}/admin/results`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to save result');
+  }
+  return response.json();
+};
+
+export const updateAdminResultStatus = async (id, status) => {
+  const response = await fetch(`${API_URL}/admin/results/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update result status');
+  }
+  return response.json();
+};

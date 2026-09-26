@@ -10,7 +10,7 @@ import {
   assignments,
   grades,
 } from "../db/schema.js";
-import { eq, count, and, gt, desc, ilike, or } from "drizzle-orm";
+import { eq, count, and, gt, desc, ilike, or, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
@@ -57,6 +57,26 @@ router.get("/dashboard", requirePermission(PERMISSIONS.REPORTS_READ), async (req
     // Published Results
     const [publishedResultsRes] = await db.select({ count: count() }).from(grades); // Using grades for results proxy
 
+    // Recharts Data: Enrollment Trend (Group by Month)
+    const enrollmentTrend = await db.select({
+      name: sql<string>`to_char(${users.createdAt}, 'Mon')`,
+      students: count()
+    })
+    .from(users)
+    .where(eq(users.role, "student"))
+    .groupBy(sql`to_char(${users.createdAt}, 'Mon')`)
+    .orderBy(sql`min(${users.createdAt})`);
+
+    // Recharts Data: Attendance Overview (Group by Day)
+    const attendanceTrend = await db.select({
+      name: sql<string>`to_char(${attendance.date}, 'Dy')`,
+      attendance: sql<number>`round((count(case when ${attendance.status} = 'present' then 1 end) * 100.0) / nullif(count(*), 0))`
+    })
+    .from(attendance)
+    .groupBy(sql`to_char(${attendance.date}, 'Dy')`, attendance.date)
+    .orderBy(desc(attendance.date))
+    .limit(7);
+
     res.json({
       students: {
         total: totalStudentsRes.count,
@@ -77,6 +97,16 @@ router.get("/dashboard", requirePermission(PERMISSIONS.REPORTS_READ), async (req
         upcomingExams: upcomingExamsRes.count,
         pendingAssignments: pendingAssignmentsRes.count,
         publishedResults: publishedResultsRes.count
+      },
+      analytics: {
+        enrollmentTrend: enrollmentTrend.length > 0 ? enrollmentTrend : [
+          { name: 'Jan', students: 0 },
+          { name: 'Feb', students: 0 }
+        ],
+        attendanceTrend: attendanceTrend.length > 0 ? attendanceTrend.reverse() : [
+          { name: 'Mon', attendance: 0 },
+          { name: 'Tue', attendance: 0 }
+        ]
       }
     });
 

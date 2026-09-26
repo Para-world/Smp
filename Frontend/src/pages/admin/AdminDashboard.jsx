@@ -77,22 +77,8 @@ export default function AdminDashboard() {
     { label: 'Published Results', value: data.academic.publishedResults, icon: ClipboardCheck, color: 'text-teal-500' },
   ] : [];
 
-  const attendanceData = [
-    { name: 'Mon', attendance: 92 },
-    { name: 'Tue', attendance: 88 },
-    { name: 'Wed', attendance: 95 },
-    { name: 'Thu', attendance: 90 },
-    { name: 'Fri', attendance: 85 },
-  ];
-
-  const enrollmentData = [
-    { name: 'Jan', students: 1200 },
-    { name: 'Feb', students: 1250 },
-    { name: 'Mar', students: 1300 },
-    { name: 'Apr', students: 1450 },
-    { name: 'May', students: 1550 },
-    { name: 'Jun', students: 1600 },
-  ];
+  const attendanceData = data?.analytics?.attendanceTrend || [];
+  const enrollmentData = data?.analytics?.enrollmentTrend || [];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050811] transition-colors">

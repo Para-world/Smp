@@ -37,6 +37,9 @@ import AdminCourseDetail from './pages/admin/AdminCourseDetail'
 import AdminEnrollments from './pages/admin/AdminEnrollments'
 import AdminAttendance from './pages/admin/AdminAttendance'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
+import FacultyAssignments from './pages/faculty/FacultyAssignments'
+import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
+import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -441,6 +444,30 @@ function AppContent() {
         />
 
         {/* Faculty Routes */}
+        <Route
+          path="/faculty/assignments"
+          element={
+            <FacultyRoute>
+              <FacultyAssignments />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/assignments/create"
+          element={
+            <FacultyRoute>
+              <FacultyAssignmentCreate />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/assignments/:assignmentId"
+          element={
+            <FacultyRoute>
+              <FacultyAssignmentDetail />
+            </FacultyRoute>
+          }
+        />
         <Route
           path="/faculty/courses/:courseId/attendance"
           element={

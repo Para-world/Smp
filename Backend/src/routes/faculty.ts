@@ -5,6 +5,9 @@ import {
   courses,
   enrollments,
   attendance,
+  assignments,
+  submissions,
+  grades,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
@@ -37,6 +40,33 @@ router.get("/dashboard", requirePermission(PERMISSIONS.COURSES_READ), async (req
   } catch (error) {
     console.error("Error fetching faculty dashboard stats:", error);
     res.status(500).json({ error: "Failed to load dashboard statistics" });
+  }
+});
+
+/**
+ * GET /api/faculty/courses
+ * Get list of courses assigned to the faculty
+ */
+router.get("/courses", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+
+    const facultyCourses = await db
+      .select({
+        id: courses.id,
+        code: courses.code,
+        title: courses.title,
+        credits: courses.credits,
+        isActive: courses.isActive,
+      })
+      .from(courses)
+      .where(eq(courses.facultyId, facultyId))
+      .orderBy(desc(courses.createdAt));
+
+    res.json(facultyCourses);
+  } catch (error) {
+    console.error("Error fetching faculty courses:", error);
+    res.status(500).json({ error: "Failed to load courses" });
   }
 });
 
@@ -124,6 +154,195 @@ router.post("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTEN
   } catch (error) {
     console.error("Error saving attendance:", error);
     res.status(500).json({ error: "Failed to save attendance" });
+  }
+});
+
+/**
+ * POST /api/faculty/assignments
+ * Create a new assignment
+ */
+router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+    const { title, courseId, description, dueDate, maxScore, weight } = req.body;
+
+    if (!title || !courseId) {
+      res.status(400).json({ error: "Title and Course ID are required" });
+      return;
+    }
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied or course not found" });
+      return;
+    }
+
+    const [assignment] = await db.insert(assignments).values({
+      courseId,
+      title,
+      description,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      maxScore: maxScore || "100",
+      weight: weight || "1",
+      isPublished: true, // Assuming published immediately for simplicity
+    }).returning();
+
+    res.status(201).json(assignment);
+  } catch (error) {
+    console.error("Error creating assignment:", error);
+    res.status(500).json({ error: "Failed to create assignment" });
+  }
+});
+
+/**
+ * GET /api/faculty/assignments
+ * List assignments for faculty courses
+ */
+router.get("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+
+    const facultyAssignments = await db
+      .select({
+        id: assignments.id,
+        title: assignments.title,
+        dueDate: assignments.dueDate,
+        maxScore: assignments.maxScore,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseCode: courses.code,
+      })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(eq(courses.facultyId, facultyId))
+      .orderBy(desc(assignments.createdAt));
+
+    res.json(facultyAssignments);
+  } catch (error) {
+    console.error("Error fetching assignments:", error);
+    res.status(500).json({ error: "Failed to load assignments" });
+  }
+});
+
+/**
+ * GET /api/faculty/assignments/:assignmentId/submissions
+ * View submissions for a specific assignment
+ */
+router.get("/assignments/:assignmentId/submissions", requirePermission(PERMISSIONS.ASSIGNMENTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const assignmentId = req.params.assignmentId as string;
+    const facultyId = req.user!.userId;
+
+    // Verify assignment belongs to faculty's course
+    const [assignment] = await db
+      .select({ id: assignments.id })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(and(eq(assignments.id, assignmentId), eq(courses.facultyId, facultyId)));
+
+    if (!assignment) {
+      res.status(403).json({ error: "Access denied or assignment not found" });
+      return;
+    }
+
+    const submissionList = await db
+      .select({
+        id: submissions.id,
+        status: submissions.status,
+        submittedAt: submissions.submittedAt,
+        content: submissions.content,
+        fileUrl: submissions.fileUrl,
+        studentId: users.id,
+        studentName: users.name,
+        studentEmail: users.email,
+        gradeId: grades.id,
+        score: grades.score,
+        feedback: grades.feedback,
+      })
+      .from(submissions)
+      .innerJoin(users, eq(submissions.studentId, users.id))
+      .leftJoin(grades, and(
+        eq(grades.assignmentId, assignmentId),
+        eq(grades.studentId, users.id)
+      ))
+      .where(eq(submissions.assignmentId, assignmentId))
+      .orderBy(desc(submissions.submittedAt));
+      
+    res.json(submissionList);
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    res.status(500).json({ error: "Failed to load submissions" });
+  }
+});
+
+/**
+ * POST /api/faculty/assignments/:assignmentId/submissions/:studentId/grade
+ * Grade a student's submission
+ */
+router.post("/assignments/:assignmentId/submissions/:studentId/grade", requirePermission(PERMISSIONS.GRADES_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const assignmentId = req.params.assignmentId as string;
+    const studentId = req.params.studentId as string;
+    const facultyId = req.user!.userId;
+    const { score, feedback } = req.body;
+
+    if (score === undefined) {
+      res.status(400).json({ error: "Score is required" });
+      return;
+    }
+
+    // Verify assignment belongs to faculty's course
+    const [assignment] = await db
+      .select({ id: assignments.id, maxScore: assignments.maxScore })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(and(eq(assignments.id, assignmentId), eq(courses.facultyId, facultyId)));
+
+    if (!assignment) {
+      res.status(403).json({ error: "Access denied or assignment not found" });
+      return;
+    }
+
+    // Validate score
+    if (parseFloat(score) > parseFloat(assignment.maxScore as unknown as string) || parseFloat(score) < 0) {
+      res.status(400).json({ error: `Score must be between 0 and ${assignment.maxScore}` });
+      return;
+    }
+
+    // Upsert grade
+    const [existingGrade] = await db
+      .select()
+      .from(grades)
+      .where(and(eq(grades.assignmentId, assignmentId), eq(grades.studentId, studentId)));
+
+    if (existingGrade) {
+      await db.update(grades).set({
+        score: score.toString(),
+        feedback,
+        gradedBy: facultyId,
+        gradedAt: new Date(),
+      }).where(eq(grades.id, existingGrade.id));
+    } else {
+      await db.insert(grades).values({
+        assignmentId,
+        studentId,
+        score: score.toString(),
+        feedback,
+        gradedBy: facultyId,
+        gradedAt: new Date(),
+      });
+    }
+
+    // Update submission status
+    await db.update(submissions)
+      .set({ status: 'graded' })
+      .where(and(eq(submissions.assignmentId, assignmentId), eq(submissions.studentId, studentId)));
+
+    res.json({ message: "Grade saved successfully" });
+  } catch (error) {
+    console.error("Error saving grade:", error);
+    res.status(500).json({ error: "Failed to save grade" });
   }
 });
 

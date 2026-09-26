@@ -42,3 +42,60 @@ export const submitFacultyAttendance = async (courseId, date, records) => {
   }
   return response.json();
 };
+
+export const fetchFacultyAssignments = async () => {
+  const response = await fetch(`${API_URL}/faculty/assignments`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch assignments');
+  }
+  return response.json();
+};
+
+export const createFacultyAssignment = async (data) => {
+  const response = await fetch(`${API_URL}/faculty/assignments`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create assignment');
+  }
+  return response.json();
+};
+
+export const fetchAssignmentSubmissions = async (assignmentId) => {
+  const response = await fetch(`${API_URL}/faculty/assignments/${assignmentId}/submissions`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch submissions');
+  }
+  return response.json();
+};
+
+export const gradeSubmission = async (assignmentId, studentId, data) => {
+  const response = await fetch(`${API_URL}/faculty/assignments/${assignmentId}/submissions/${studentId}/grade`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to grade submission');
+  }
+  return response.json();
+};
+
+export const fetchFacultyCourses = async () => {
+  const response = await fetch(`${API_URL}/faculty/courses`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch courses');
+  }
+  return response.json();
+};

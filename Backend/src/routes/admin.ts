@@ -614,7 +614,7 @@ router.post("/enrollments", requirePermission(PERMISSIONS.ENROLLMENTS_CREATE), a
  */
 router.delete("/enrollments/:id", requirePermission(PERMISSIONS.ENROLLMENTS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const [deleted] = await db.delete(enrollments).where(eq(enrollments.id, id)).returning();
     if (!deleted) {

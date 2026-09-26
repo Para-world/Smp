@@ -41,6 +41,7 @@ import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
 import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
 import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
+import FacultyLayout from './components/faculty/FacultyLayout'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -148,7 +149,7 @@ function FacultyRoute({ children }) {
     return <Navigate to="/dashboard" replace />
   }
 
-  return children
+  return <FacultyLayout>{children}</FacultyLayout>
 }
 
 // Smart redirect based on role

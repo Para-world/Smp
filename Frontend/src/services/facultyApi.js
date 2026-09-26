@@ -1,6 +1,12 @@
-import { getAuthHeaders } from '../utils/auth';
+function getAuthHeaders() {
+  const token = localStorage.getItem('edusphere_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const fetchFacultyDashboard = async () => {
   const response = await fetch(`${API_URL}/faculty/dashboard`, {

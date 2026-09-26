@@ -8,6 +8,7 @@ import {
   assignments,
   submissions,
   grades,
+  exams,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
@@ -343,6 +344,131 @@ router.post("/assignments/:assignmentId/submissions/:studentId/grade", requirePe
   } catch (error) {
     console.error("Error saving grade:", error);
     res.status(500).json({ error: "Failed to save grade" });
+  }
+});
+
+/**
+ * GET /api/faculty/exams
+ * List exams for courses assigned to this faculty
+ */
+router.get("/exams", requirePermission(PERMISSIONS.EXAMS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+
+    const facultyExams = await db
+      .select({
+        id: exams.id,
+        title: exams.title,
+        date: exams.date,
+        startTime: exams.startTime,
+        endTime: exams.endTime,
+        durationMinutes: exams.durationMinutes,
+        venue: exams.venue,
+        status: exams.status,
+        courseId: courses.id,
+        courseTitle: courses.title,
+        courseCode: courses.code,
+      })
+      .from(exams)
+      .innerJoin(courses, eq(exams.courseId, courses.id))
+      .where(eq(courses.facultyId, facultyId))
+      .orderBy(desc(exams.date));
+
+    res.json(facultyExams);
+  } catch (error) {
+    console.error("Error fetching faculty exams:", error);
+    res.status(500).json({ error: "Failed to load exams" });
+  }
+});
+
+/**
+ * POST /api/faculty/exams
+ * Create a new exam for a course assigned to this faculty
+ */
+router.post("/exams", requirePermission(PERMISSIONS.EXAMS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+    const { 
+      courseId, title, description, examType, date, 
+      startTime, endTime, durationMinutes, venue, instructions 
+    } = req.body;
+
+    if (!courseId || !title || !date || !startTime || !endTime || !durationMinutes) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied or course not found" });
+      return;
+    }
+
+    const [newExam] = await db.insert(exams).values({
+      courseId,
+      title,
+      description,
+      examType: examType || 'MID_TERM',
+      date: new Date(date),
+      startTime,
+      endTime,
+      durationMinutes: parseInt(durationMinutes, 10),
+      venue,
+      instructions,
+      status: 'SCHEDULED'
+    }).returning();
+
+    res.status(201).json(newExam);
+  } catch (error) {
+    console.error("Error creating exam:", error);
+    res.status(500).json({ error: "Failed to create exam" });
+  }
+});
+
+/**
+ * PUT /api/faculty/exams/:id
+ * Update an existing exam for a course assigned to this faculty
+ */
+router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const examId = req.params.id as string;
+    const facultyId = req.user!.userId;
+    const { 
+      title, description, examType, date, 
+      startTime, endTime, durationMinutes, venue, instructions, status 
+    } = req.body;
+
+    // Verify exam belongs to faculty's course
+    const [existingExam] = await db
+      .select({ id: exams.id })
+      .from(exams)
+      .innerJoin(courses, eq(exams.courseId, courses.id))
+      .where(and(eq(exams.id, examId), eq(courses.facultyId, facultyId)));
+
+    if (!existingExam) {
+      res.status(403).json({ error: "Access denied or exam not found" });
+      return;
+    }
+
+    const [updatedExam] = await db.update(exams).set({
+      title,
+      description,
+      examType,
+      date: date ? new Date(date) : undefined,
+      startTime,
+      endTime,
+      durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
+      venue,
+      instructions,
+      status,
+      updatedAt: new Date()
+    }).where(eq(exams.id, examId)).returning();
+
+    res.json(updatedExam);
+  } catch (error) {
+    console.error("Error updating exam:", error);
+    res.status(500).json({ error: "Failed to update exam" });
   }
 });
 

@@ -99,3 +99,40 @@ export const fetchFacultyCourses = async () => {
   }
   return response.json();
 };
+
+export const fetchFacultyExams = async () => {
+  const response = await fetch(`${API_URL}/faculty/exams`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch exams');
+  }
+  return response.json();
+};
+
+export const createFacultyExam = async (data) => {
+  const response = await fetch(`${API_URL}/faculty/exams`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create exam');
+  }
+  return response.json();
+};
+
+export const updateFacultyExam = async (id, data) => {
+  const response = await fetch(`${API_URL}/faculty/exams/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update exam');
+  }
+  return response.json();
+};

@@ -36,11 +36,15 @@ import AdminCourses from './pages/admin/AdminCourses'
 import AdminCourseDetail from './pages/admin/AdminCourseDetail'
 import AdminEnrollments from './pages/admin/AdminEnrollments'
 import AdminAttendance from './pages/admin/AdminAttendance'
+import AdminExams from './pages/admin/AdminExams'
+import AdminExamCreate from './pages/admin/AdminExamCreate'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
 import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
 import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
+import FacultyExams from './pages/faculty/FacultyExams'
+import FacultyExamCreate from './pages/faculty/FacultyExamCreate'
 import FacultyLayout from './components/faculty/FacultyLayout'
 
 // Protected route wrapper
@@ -444,6 +448,22 @@ function AppContent() {
             </AdminRoute>
           }
         />
+        <Route
+          path="/admin/exams"
+          element={
+            <AdminRoute>
+              <AdminExams />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/exams/create"
+          element={
+            <AdminRoute>
+              <AdminExamCreate />
+            </AdminRoute>
+          }
+        />
 
         {/* Faculty Routes */}
         <Route
@@ -483,6 +503,22 @@ function AppContent() {
           element={
             <FacultyRoute>
               <FacultyAttendanceMarking />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/exams"
+          element={
+            <FacultyRoute>
+              <FacultyExams />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/exams/create"
+          element={
+            <FacultyRoute>
+              <FacultyExamCreate />
             </FacultyRoute>
           }
         />

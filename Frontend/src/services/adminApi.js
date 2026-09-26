@@ -135,3 +135,40 @@ export const fetchAdminAttendanceSummary = async (threshold = 75) => {
   }
   return response.json();
 };
+
+export const fetchAdminExams = async () => {
+  const response = await fetch(`${API_URL}/admin/exams`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch exams');
+  }
+  return response.json();
+};
+
+export const createAdminExam = async (data) => {
+  const response = await fetch(`${API_URL}/admin/exams`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create exam');
+  }
+  return response.json();
+};
+
+export const updateAdminExam = async (id, data) => {
+  const response = await fetch(`${API_URL}/admin/exams/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update exam');
+  }
+  return response.json();
+};

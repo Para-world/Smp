@@ -568,4 +568,110 @@ router.get("/attendance", requirePermission(PERMISSIONS.ATTENDANCE_READ), async 
   }
 });
 
+/**
+ * GET /api/admin/exams
+ * Fetch all exams with their course details
+ */
+router.get("/exams", requirePermission(PERMISSIONS.EXAMS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const examList = await db
+      .select({
+        id: exams.id,
+        title: exams.title,
+        date: exams.date,
+        startTime: exams.startTime,
+        endTime: exams.endTime,
+        durationMinutes: exams.durationMinutes,
+        venue: exams.venue,
+        status: exams.status,
+        courseId: courses.id,
+        courseCode: courses.code,
+        courseTitle: courses.title,
+      })
+      .from(exams)
+      .innerJoin(courses, eq(exams.courseId, courses.id))
+      .orderBy(desc(exams.date));
+
+    res.json(examList);
+  } catch (error) {
+    console.error("Error fetching exams:", error);
+    res.status(500).json({ error: "Failed to load exams" });
+  }
+});
+
+/**
+ * POST /api/admin/exams
+ * Create a new exam
+ */
+router.post("/exams", requirePermission(PERMISSIONS.EXAMS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { 
+      courseId, title, description, examType, date, 
+      startTime, endTime, durationMinutes, venue, instructions 
+    } = req.body;
+
+    if (!courseId || !title || !date || !startTime || !endTime || !durationMinutes) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    const [newExam] = await db.insert(exams).values({
+      courseId,
+      title,
+      description,
+      examType: examType || 'MID_TERM',
+      date: new Date(date),
+      startTime,
+      endTime,
+      durationMinutes: parseInt(durationMinutes, 10),
+      venue,
+      instructions,
+      status: 'SCHEDULED'
+    }).returning();
+
+    res.status(201).json(newExam);
+  } catch (error) {
+    console.error("Error creating exam:", error);
+    res.status(500).json({ error: "Failed to create exam" });
+  }
+});
+
+/**
+ * PUT /api/admin/exams/:id
+ * Update an existing exam
+ */
+router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const examId = req.params.id as string;
+    const { 
+      title, description, examType, date, 
+      startTime, endTime, durationMinutes, venue, instructions, status 
+    } = req.body;
+
+    const [updatedExam] = await db.update(exams).set({
+      title,
+      description,
+      examType,
+      date: date ? new Date(date) : undefined,
+      startTime,
+      endTime,
+      durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
+      venue,
+      instructions,
+      status,
+      updatedAt: new Date()
+    }).where(eq(exams.id, examId)).returning();
+
+    if (!updatedExam) {
+      res.status(404).json({ error: "Exam not found" });
+      return;
+    }
+
+    res.json(updatedExam);
+  } catch (error) {
+    console.error("Error updating exam:", error);
+    res.status(500).json({ error: "Failed to update exam" });
+  }
+});
+
 export default router;

@@ -30,6 +30,7 @@ const navGroups = [
     items: [
       { label: 'My Courses', icon: BookOpen, path: '/faculty/courses' },
       { label: 'Assignments', icon: FileText, path: '/faculty/assignments' },
+      { label: 'Exams', icon: ClipboardCheck, path: '/faculty/exams' },
       { label: 'Timetable', icon: Calendar, path: '/faculty/timetable' },
     ]
   },

@@ -196,9 +196,9 @@ router.delete("/devices/:deviceId", requireAuth, async (req: AuthRequest, res: R
   }
 });
 
-// ─── POST /api/auth/devices/logout-all ──────────────────────────────────────
+// ─── POST /api/auth/devices/logout-others ───────────────────────────────────
 
-router.post("/devices/logout-all", requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/devices/logout-others", requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const currentDeviceId = req.headers["x-device-id"] as string;
 
@@ -211,6 +211,22 @@ router.post("/devices/logout-all", requireAuth, async (req: AuthRequest, res: Re
           ne(trustedDevices.deviceId, currentDeviceId) // Don't logout current device
         )
       );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Logout others error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── POST /api/auth/devices/logout-all ──────────────────────────────────────
+
+router.post("/devices/logout-all", requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await db
+      .update(trustedDevices)
+      .set({ trusted: false, revokedAt: new Date() })
+      .where(eq(trustedDevices.userId, req.user!.userId));
 
     res.json({ success: true });
   } catch (error) {

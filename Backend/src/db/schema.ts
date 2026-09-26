@@ -145,6 +145,28 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const userSettings = pgTable("user_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  theme: varchar("theme", { length: 20 }).notNull().default("system"), // 'light', 'dark', 'system'
+  language: varchar("language", { length: 10 }).notNull().default("en"),
+  
+  // Notification Preferences
+  emailNotifications: boolean("email_notifications").notNull().default(true),
+  assignmentNotifications: boolean("assignment_notifications").notNull().default(true),
+  examNotifications: boolean("exam_notifications").notNull().default(true),
+  resultNotifications: boolean("result_notifications").notNull().default(true),
+  attendanceNotifications: boolean("attendance_notifications").notNull().default(true),
+  announcementNotifications: boolean("announcement_notifications").notNull().default(true),
+  timetableNotifications: boolean("timetable_notifications").notNull().default(true),
+  
+  // Security
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
+  
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Student Profiles ────────────────────────────────────────────────────────
 
 export const studentProfiles = pgTable("student_profiles", {
@@ -449,6 +471,7 @@ export const semesterResults = pgTable("semester_results", {
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   studentProfile: one(studentProfiles, { fields: [users.id], references: [studentProfiles.userId] }),
+  settings: one(userSettings, { fields: [users.id], references: [userSettings.userId] }),
   enrollments: many(enrollments),
   taughtCourses: many(courses),
   grades: many(grades),
@@ -462,6 +485,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 export const studentProfilesRelations = relations(studentProfiles, ({ one }) => ({
   user: one(users, { fields: [studentProfiles.userId], references: [users.id] }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, { fields: [userSettings.userId], references: [users.id] }),
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({

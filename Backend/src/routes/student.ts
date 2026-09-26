@@ -21,6 +21,8 @@ import {
   studentResults,
   semesterResults,
   notifications,
+  userSettings,
+  trustedDevices,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
@@ -1789,7 +1791,209 @@ router.get(
   }
 );
 
-export default router;
+// ─── GET /api/student/settings ───────────────────────────────────────────────
+
+router.get(
+  "/settings",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      
+      let [settings] = await db
+        .select()
+        .from(userSettings)
+        .where(eq(userSettings.userId, userId))
+        .limit(1);
+        
+      if (!settings) {
+        // Create default settings if not exists
+        [settings] = await db
+          .insert(userSettings)
+          .values({ userId })
+          .returning();
+      }
+
+      // Fetch profile info
+      const [user] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          createdAt: users.createdAt,
+          isActive: users.isActive,
+          emailVerified: users.emailVerified,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      const [profile] = await db
+        .select()
+        .from(studentProfiles)
+        .where(eq(studentProfiles.userId, userId))
+        .limit(1);
+
+      const [activeSemester] = await db
+        .select()
+        .from(semesters)
+        .where(eq(semesters.status, "active"))
+        .limit(1);
+      
+      const profileData = {
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        studentId: `BCA${new Date(user.createdAt).getFullYear()}${user.id.substring(0, 4).toUpperCase()}`,
+        program: profile?.program || "Bachelor of Computer Applications",
+        semester: activeSemester?.name || "Semester 1",
+        status: user.isActive ? "Active" : "Inactive",
+      };
+
+      res.json({ settings, profile: profileData });
+    } catch (error) {
+      console.error("Fetch settings error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── PATCH /api/student/settings ─────────────────────────────────────────────
+
+const updateSettingsSchema = z.object({
+  theme: z.enum(["light", "dark", "system"]).optional(),
+  language: z.string().optional(),
+  emailNotifications: z.boolean().optional(),
+  assignmentNotifications: z.boolean().optional(),
+  examNotifications: z.boolean().optional(),
+  resultNotifications: z.boolean().optional(),
+  attendanceNotifications: z.boolean().optional(),
+  announcementNotifications: z.boolean().optional(),
+  timetableNotifications: z.boolean().optional(),
+  twoFactorEnabled: z.boolean().optional(),
+});
+
+router.patch(
+  "/settings",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const body = updateSettingsSchema.parse(req.body);
+      
+      // Upsert
+      let [settings] = await db
+        .select({ id: userSettings.id })
+        .from(userSettings)
+        .where(eq(userSettings.userId, userId))
+        .limit(1);
+        
+      if (!settings) {
+        const [newSettings] = await db
+          .insert(userSettings)
+          .values({ userId, ...body, updatedAt: new Date() })
+          .returning();
+        res.json({ settings: newSettings });
+        return;
+      }
+      
+      const [updatedSettings] = await db
+        .update(userSettings)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(userSettings.id, settings.id))
+        .returning();
+        
+      res.json({ settings: updatedSettings });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      console.error("Update settings error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ─── PATCH /api/student/settings/password ────────────────────────────────────
+
+import { hash, compare } from "../utils/crypto.js";
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string()
+    .min(8, "Must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Must contain at least one special character"),
+});
+
+router.patch(
+  "/settings/password",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+      
+      const [user] = await db
+        .select({ passwordHash: users.passwordHash })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+        
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      
+      const isValid = await compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        res.status(401).json({ error: "Incorrect current password" });
+        return;
+      }
+      
+      const newHash = await hash(newPassword);
+      
+      await db
+        .update(users)
+        .set({ passwordHash: newHash, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+        
+      // Invalidate other devices
+      const currentDeviceId = req.headers["x-device-id"] as string | undefined;
+      if (currentDeviceId) {
+        await db
+          .delete(trustedDevices)
+          .where(
+            and(
+              eq(trustedDevices.userId, userId),
+              sql`${trustedDevices.deviceId} != ${currentDeviceId}`
+            )
+          );
+      } else {
+        await db
+          .delete(trustedDevices)
+          .where(eq(trustedDevices.userId, userId));
+      }
+        
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: error.errors[0].message });
+        return;
+      }
+      console.error("Change password error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+
 
 // ─── Announcements ───────────────────────────────────────────────────────────
 
@@ -2000,3 +2204,5 @@ router.patch(
     }
   }
 );
+
+export default router;

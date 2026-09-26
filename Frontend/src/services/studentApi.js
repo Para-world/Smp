@@ -338,3 +338,105 @@ export async function markAllNotificationsRead() {
 
   return res.json();
 }
+
+// --- SETTINGS & SECURITY --------------------------------------------------
+
+export async function getSettings() {
+  const res = await fetch("${API_URL}/student/settings", {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load settings');
+  }
+
+  return res.json();
+}
+
+export async function updateSettings(settings) {
+  const res = await fetch("${API_URL}/student/settings", {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(settings),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to update settings');
+  }
+
+  return res.json();
+}
+
+export async function changePassword(data) {
+  const res = await fetch("${API_URL}/student/settings/password", {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const result = await res.json().catch(() => ({}));
+    throw new Error(result.error || 'Failed to change password');
+  }
+
+  return res.json();
+}
+
+export async function getTrustedDevices() {
+  const deviceId = localStorage.getItem('edusphere_device_id') || '';
+  const res = await fetch(`${API_URL}/auth/devices`, {
+    headers: { ...getAuthHeaders(), 'x-device-id': deviceId },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load trusted devices');
+  }
+
+  return res.json();
+}
+
+export async function revokeDevice(id) {
+  const res = await fetch(`${API_URL}/auth/devices/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to revoke device');
+  }
+
+  return res.json();
+}
+
+export async function logoutAllOtherDevices() {
+  const deviceId = localStorage.getItem('edusphere_device_id') || '';
+  const res = await fetch(`${API_URL}/auth/devices/logout-others`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders(), 'x-device-id': deviceId },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to logout other devices');
+  }
+
+  return res.json();
+}
+
+export async function logoutAllDevices() {
+  const res = await fetch(`${API_URL}/auth/devices/logout-all`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to logout all devices');
+  }
+
+  return res.json();
+}

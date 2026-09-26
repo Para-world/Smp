@@ -280,7 +280,7 @@ router.get("/assignments/:assignmentId/submissions", requirePermission(PERMISSIO
  * POST /api/faculty/assignments/:assignmentId/submissions/:studentId/grade
  * Grade a student's submission
  */
-router.post("/assignments/:assignmentId/submissions/:studentId/grade", requirePermission(PERMISSIONS.GRADES_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/assignments/:assignmentId/submissions/:studentId/grade", requirePermission(PERMISSIONS.SUBMISSIONS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const assignmentId = req.params.assignmentId as string;
     const studentId = req.params.studentId as string;

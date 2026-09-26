@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { ArrowLeft, Save } from 'lucide-react';
+import AdminSidebar from '../../components/admin/AdminSidebar';
+import AdminHeader from '../../components/admin/AdminHeader';
 
-export default function AdminExamCreate() {
+export default function AdminExamCreate({ mobileOpen, setMobileOpen }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -71,18 +74,40 @@ export default function AdminExamCreate() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <Link to="/admin/exams">
-          <Button variant="outline" size="icon" className="rounded-full">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Schedule Institutional Exam</h1>
-          <p className="text-slate-500 dark:text-slate-400">Plan a new examination for any course</p>
-        </div>
-      </div>
+    <div className={`min-h-screen bg-slate-50 dark:bg-[#050811] transition-colors ${
+        mobileOpen ? 'overflow-hidden h-screen' : ''
+      }`}
+    >
+      <AdminSidebar
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
+
+      <div
+        className={`transition-all duration-300 ${
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+        }`}
+      >
+        <AdminHeader
+          pageTitle="Schedule Exam"
+          onMenuClick={() => setMobileOpen(true)}
+        />
+
+        <main className="px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px] mx-auto">
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-4 mb-6">
+              <Link to="/admin/exams">
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Schedule Institutional Exam</h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Plan a new examination for any course</p>
+              </div>
+            </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -248,6 +273,9 @@ export default function AdminExamCreate() {
           </Card>
         </div>
       </form>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

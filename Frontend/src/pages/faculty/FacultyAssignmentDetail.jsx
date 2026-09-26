@@ -180,11 +180,12 @@ export default function FacultyAssignmentDetail() {
           <form onSubmit={handleGradeSubmit}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="score">Score</Label>
+                <Label htmlFor="score">Score (Max: {assignment?.maxScore || 100})</Label>
                 <Input
                   id="score"
                   type="number"
                   min="0"
+                  max={assignment?.maxScore || 100}
                   step="0.1"
                   value={gradeData.score}
                   onChange={(e) => setGradeData({ ...gradeData, score: e.target.value })}

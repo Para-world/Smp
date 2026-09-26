@@ -11,6 +11,8 @@ import courseRoutes from "./routes/courses.js";
 import departmentRoutes from "./routes/departments.js";
 import deviceRoutes from "./routes/device.js";
 import studentRoutes from "./routes/student.js";
+import adminRoutes from "./routes/admin.js";
+import facultyRoutes from "./routes/faculty.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,6 +51,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/faculty", facultyRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 

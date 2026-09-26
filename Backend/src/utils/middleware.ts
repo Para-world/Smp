@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "./jwt.js";
+import { Permission, hasPermission } from "./permissions.js";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -39,6 +40,22 @@ export function requireRole(...roles: string[]) {
     }
 
     if (!roles.includes(req.user.role)) {
+      res.status(403).json({ error: "Insufficient permissions" });
+      return;
+    }
+
+    next();
+  };
+}
+
+export function requirePermission(permission: Permission) {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    if (!hasPermission(req.user.role, permission)) {
       res.status(403).json({ error: "Insufficient permissions" });
       return;
     }

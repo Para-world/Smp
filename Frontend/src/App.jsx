@@ -26,6 +26,16 @@ import StudentAnnouncements from './pages/student/StudentAnnouncements'
 import AnnouncementDetail from './pages/student/AnnouncementDetail'
 import StudentNotifications from './pages/student/StudentNotifications'
 import StudentSettings from './pages/student/StudentSettings'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminStudents from './pages/admin/AdminStudents'
+import AdminStudentDetail from './pages/admin/AdminStudentDetail'
+import AdminStudentCreate from './pages/admin/AdminStudentCreate'
+import AdminInstructors from './pages/admin/AdminInstructors'
+import AdminInstructorDetail from './pages/admin/AdminInstructorDetail'
+import AdminCourses from './pages/admin/AdminCourses'
+import AdminCourseDetail from './pages/admin/AdminCourseDetail'
+import AdminEnrollments from './pages/admin/AdminEnrollments'
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
@@ -80,6 +90,62 @@ function StudentRoute({ children }) {
   return children
 }
 
+// Admin-only route wrapper
+function AdminRoute({ children }) {
+  const { user, isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#050811] flex items-center justify-center transition-colors">
+        <div className="flex flex-col items-center gap-3">
+          <span className="material-symbols-outlined text-secondary text-[40px] animate-spin">
+            progress_activity
+          </span>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />
+  }
+
+  if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
+// Faculty-only route wrapper
+function FacultyRoute({ children }) {
+  const { user, isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#050811] flex items-center justify-center transition-colors">
+        <div className="flex flex-col items-center gap-3">
+          <span className="material-symbols-outlined text-secondary text-[40px] animate-spin">
+            progress_activity
+          </span>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />
+  }
+
+  if (user?.role !== 'faculty') {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
 // Smart redirect based on role
 function DashboardRedirect() {
   const { user } = useAuth()
@@ -88,8 +154,15 @@ function DashboardRedirect() {
     return <Navigate to="/student/dashboard" replace />
   }
 
-  // Non-student roles go to the generic dashboard
-  return <Dashboard />
+  if (user?.role === 'admin' || user?.role === 'super_admin') {
+    return <Navigate to="/admin/dashboard" replace />
+  }
+
+  if (user?.role === 'faculty') {
+    return <Navigate to="/faculty/dashboard" replace />
+  }
+
+  return <Navigate to="/student/dashboard" replace />
 }
 
 function AppContent() {
@@ -280,6 +353,83 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        {/* Admin routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/students"
+          element={
+            <AdminRoute>
+              <AdminStudents />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/students/create"
+          element={
+            <AdminRoute>
+              <AdminStudentCreate />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/students/:studentId"
+          element={
+            <AdminRoute>
+              <AdminStudentDetail />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/instructors"
+          element={
+            <AdminRoute>
+              <AdminInstructors />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/instructors/:instructorId"
+          element={
+            <AdminRoute>
+              <AdminInstructorDetail />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/courses"
+          element={
+            <AdminRoute>
+              <AdminCourses />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:courseId"
+          element={
+            <AdminRoute>
+              <AdminCourseDetail />
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path="/admin/enrollments"
+          element={
+            <AdminRoute>
+              <AdminEnrollments />
+            </AdminRoute>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -41,7 +41,8 @@ export default function AdminStudentDetail() {
     { id: 'attendance', label: 'Attendance' },
     { id: 'assignments', label: 'Assignments' },
     { id: 'exams', label: 'Exams' },
-    { id: 'results', label: 'Results' }
+    { id: 'results', label: 'Results' },
+    { id: 'activity', label: 'Activity' }
   ];
 
   return (

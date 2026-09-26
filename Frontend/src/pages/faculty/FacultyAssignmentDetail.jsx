@@ -173,14 +173,25 @@ export default function FacultyAssignmentDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Grade Submission</DialogTitle>
-            <DialogDescription>
-              {selectedSubmission?.studentName} ({selectedSubmission?.studentEmail})
-            </DialogDescription>
           </DialogHeader>
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg text-sm space-y-2 mb-2">
+            <div className="grid grid-cols-3">
+              <span className="text-slate-500 font-medium">Student:</span>
+              <span className="col-span-2 font-semibold text-slate-900 dark:text-white">{selectedSubmission?.studentName}</span>
+            </div>
+            <div className="grid grid-cols-3">
+              <span className="text-slate-500 font-medium">Assignment:</span>
+              <span className="col-span-2 font-semibold text-slate-900 dark:text-white">{assignment?.title}</span>
+            </div>
+            <div className="grid grid-cols-3">
+              <span className="text-slate-500 font-medium">Maximum Marks:</span>
+              <span className="col-span-2 font-semibold text-slate-900 dark:text-white">{assignment?.maxScore || '100'}</span>
+            </div>
+          </div>
           <form onSubmit={handleGradeSubmit}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="score">Score (Max: {assignment?.maxScore || 100})</Label>
+                <Label htmlFor="score" className="font-semibold text-slate-700 dark:text-slate-300">Marks</Label>
                 <Input
                   id="score"
                   type="number"
@@ -193,7 +204,7 @@ export default function FacultyAssignmentDetail() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="feedback">Feedback</Label>
+                <Label htmlFor="feedback" className="font-semibold text-slate-700 dark:text-slate-300">Feedback</Label>
                 <Textarea
                   id="feedback"
                   rows={4}

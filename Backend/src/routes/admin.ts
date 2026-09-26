@@ -10,7 +10,7 @@ import {
   assignments,
   grades,
 } from "../db/schema.js";
-import { eq, count, and, gt, desc, ilike, or, sql } from "drizzle-orm";
+import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
@@ -807,6 +807,46 @@ router.post("/exams", requirePermission(PERMISSIONS.EXAMS_CREATE), async (req: A
       return;
     }
 
+    const examDate = new Date(date);
+
+    // Fetch the course to get the facultyId for instructor conflict checking
+    const [targetCourse] = await db.select({ facultyId: courses.facultyId }).from(courses).where(eq(courses.id, courseId));
+    
+    // Conflict Validation
+    const conflictingExams = await db
+      .select({
+        id: exams.id,
+        courseId: exams.courseId,
+        venue: exams.venue,
+        facultyId: courses.facultyId
+      })
+      .from(exams)
+      .innerJoin(courses, eq(exams.courseId, courses.id))
+      .where(
+        and(
+          eq(sql`DATE(${exams.date})`, sql`DATE(${examDate.toISOString()})`),
+          // Simple time overlap check (assumes HH:mm format)
+          or(
+            and(lte(exams.startTime, endTime), gte(exams.endTime, startTime))
+          )
+        )
+      );
+
+    for (const conflict of conflictingExams) {
+      if (venue && conflict.venue === venue) {
+        res.status(409).json({ error: "Venue conflict: Another exam is scheduled in this room at this time." });
+        return;
+      }
+      if (conflict.courseId === courseId) {
+        res.status(409).json({ error: "Course conflict: An exam for this course is already scheduled at this time." });
+        return;
+      }
+      if (targetCourse?.facultyId && conflict.facultyId === targetCourse.facultyId) {
+        res.status(409).json({ error: "Instructor conflict: The instructor is already invigilating another exam at this time." });
+        return;
+      }
+    }
+
     const [newExam] = await db.insert(exams).values({
       courseId,
       title,
@@ -837,8 +877,49 @@ router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req
     const examId = req.params.id as string;
     const { 
       title, description, examType, date, 
-      startTime, endTime, durationMinutes, venue, instructions, status 
+      startTime, endTime, durationMinutes, venue, instructions, status, courseId 
     } = req.body;
+
+    if (date && startTime && endTime) {
+      const examDate = new Date(date);
+      
+      const targetCourseId = courseId || (await db.select({ courseId: exams.courseId }).from(exams).where(eq(exams.id, examId)))[0]?.courseId;
+      const targetCourse = targetCourseId ? (await db.select({ facultyId: courses.facultyId }).from(courses).where(eq(courses.id, targetCourseId)))[0] : null;
+
+      const conflictingExams = await db
+        .select({
+          id: exams.id,
+          courseId: exams.courseId,
+          venue: exams.venue,
+          facultyId: courses.facultyId
+        })
+        .from(exams)
+        .innerJoin(courses, eq(exams.courseId, courses.id))
+        .where(
+          and(
+            eq(sql`DATE(${exams.date})`, sql`DATE(${examDate.toISOString()})`),
+            or(
+              and(lte(exams.startTime, endTime), gte(exams.endTime, startTime))
+            )
+          )
+        );
+
+      for (const conflict of conflictingExams) {
+        if (conflict.id === examId) continue;
+        if (venue && conflict.venue === venue) {
+          res.status(409).json({ error: "Venue conflict: Another exam is scheduled in this room at this time." });
+          return;
+        }
+        if (targetCourseId && conflict.courseId === targetCourseId) {
+          res.status(409).json({ error: "Course conflict: An exam for this course is already scheduled at this time." });
+          return;
+        }
+        if (targetCourse?.facultyId && conflict.facultyId === targetCourse.facultyId) {
+          res.status(409).json({ error: "Instructor conflict: The instructor is already invigilating another exam at this time." });
+          return;
+        }
+      }
+    }
 
     const [updatedExam] = await db.update(exams).set({
       title,

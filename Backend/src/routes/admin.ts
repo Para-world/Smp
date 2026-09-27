@@ -1596,10 +1596,20 @@ router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), asyn
       targetUsers = studs;
     } else if (audience === 'SPECIFIC_SEMESTER' && semesterId) {
        const studs = await db.select({ id: users.id, email: users.email, name: users.name })
-        .from(studentProfiles)
-        .innerJoin(users, eq(users.id, studentProfiles.userId))
-        .where(eq(studentProfiles.currentSemesterId, semesterId));
-      targetUsers = studs;
+        .from(enrollments)
+        .innerJoin(users, eq(users.id, enrollments.studentId))
+        .innerJoin(courses, eq(courses.id, enrollments.courseId))
+        .where(eq(courses.semesterId, semesterId));
+      
+      // deduplicate by id
+      const uniqueIds = new Set();
+      targetUsers = studs.filter(user => {
+        if (!uniqueIds.has(user.id)) {
+          uniqueIds.add(user.id);
+          return true;
+        }
+        return false;
+      });
     } else if (audience === 'SPECIFIC_COURSE' && courseId) {
       const studs = await db.select({ id: users.id, email: users.email, name: users.name })
         .from(enrollments)

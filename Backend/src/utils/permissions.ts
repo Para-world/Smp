@@ -57,6 +57,10 @@ export const PERMISSIONS = {
   TIMETABLE_UPDATE: "timetable.update",
   TIMETABLE_DELETE: "timetable.delete",
 
+  // System
+  SYSTEM_READ: "system.read",
+  SYSTEM_UPDATE: "system.update",
+
   // Announcements
   ANNOUNCEMENTS_READ: "announcements.read",
   ANNOUNCEMENTS_CREATE: "announcements.create",

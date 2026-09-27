@@ -4,15 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { FileText, Download, BarChart2, Users, CheckCircle, Award } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
+import { format } from 'date-fns';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { fetchAdminReports, fetchAdminSemesters, fetchAdminCourses } from '../../services/adminApi';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a855f7', '#ec4899'];
 
@@ -111,9 +115,34 @@ export default function AdminReports() {
     }
   };
 
-  const exportCSV = () => {
-    // Simple mock export functionality
-    toast.success('Report export started. Check your downloads.');
+  const exportCSV = async (category, type) => {
+    try {
+      toast.info(`Exporting ${type} report...`);
+      const query = new URLSearchParams({ ...filters, category, type, format: 'csv' }).toString();
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/reports?${query}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `report_${category}_${type}_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export downloaded successfully!');
+    } catch (e) {
+      toast.error('Export failed: ' + e.message);
+    }
   };
 
   return (
@@ -137,9 +166,47 @@ export default function AdminReports() {
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Institution Analytics</h1>
               <p className="text-slate-500">Comprehensive insights into academic and operational performance.</p>
             </div>
-            <Button onClick={exportCSV} variant="outline" className="shrink-0 gap-2">
-              <Download className="w-4 h-4" /> Export Report
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => window.print()} variant="outline" className="shrink-0 gap-2">
+                <FileText className="w-4 h-4" /> Save as PDF
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="shrink-0 gap-2">
+                    <Download className="w-4 h-4" /> Export CSV
+                  </Button>
+                </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {activeTab === 'students' && (
+                  <>
+                    <DropdownMenuItem onClick={() => exportCSV('students', 'active_inactive')}>Active/Inactive Students</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('students', 'by_program')}>Students by Program</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('students', 'by_semester')}>Students by Semester</DropdownMenuItem>
+                  </>
+                )}
+                {activeTab === 'attendance' && (
+                  <>
+                    <DropdownMenuItem onClick={() => exportCSV('attendance', 'overall')}>Overall Attendance</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('attendance', 'course')}>Course Attendance</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('attendance', 'low_attendance')}>Low Attendance</DropdownMenuItem>
+                  </>
+                )}
+                {activeTab === 'academic' && (
+                  <>
+                    <DropdownMenuItem onClick={() => exportCSV('academic', 'pass_fail')}>Pass/Fail Rates</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('academic', 'grade_distribution')}>Grade Distribution</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('academic', 'course_performance')}>Course Performance</DropdownMenuItem>
+                  </>
+                )}
+                {activeTab === 'assignments' && (
+                  <>
+                    <DropdownMenuItem onClick={() => exportCSV('assignment', 'submission_rate')}>Submission Rate</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('assignment', 'late_submissions')}>Late Submissions</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportCSV('assignment', 'grading_completion')}>Grading Completion</DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Filters */}

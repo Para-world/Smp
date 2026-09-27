@@ -22,6 +22,7 @@ import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
 import { sendNotificationEmail } from "../utils/mailer.js";
+import { jsonToCsv } from "../utils/csv.js";
 
 const router = Router();
 
@@ -1669,7 +1670,7 @@ router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), asyn
 // GET /api/admin/reports - Fetch report data based on filters
 router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { category, type, program, department, semester, academicYear, course, startDate, endDate } = req.query;
+    const { category, type, program, department, semester, academicYear, course, startDate, endDate, format } = req.query;
 
     if (!category || !type) {
       res.status(400).json({ error: "Report category and type are required" });
@@ -1862,7 +1863,20 @@ router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: 
       }
     }
 
-    res.json(resultData);
+    if (format === 'csv') {
+      let dataToExport = resultData;
+      if (!Array.isArray(resultData)) {
+        // Wrap object in array if it's a single summary object
+        dataToExport = [resultData];
+      }
+      const csv = jsonToCsv(dataToExport);
+      const filename = `report_${category}_${type}_${new Date().getTime()}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
+    } else {
+      res.json(resultData);
+    }
   } catch (error) {
     console.error("Error generating report:", error);
     res.status(500).json({ error: "Failed to generate report" });

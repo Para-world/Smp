@@ -381,3 +381,14 @@ export const deleteAdminAnnouncement = async (id) => {
   }
   return response.json();
 };
+
+export const fetchAdminSemesters = async () => {
+  const response = await fetch(`${API_URL}/admin/semesters`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch semesters');
+  }
+  return response.json();
+};

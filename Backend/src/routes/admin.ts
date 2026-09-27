@@ -1386,6 +1386,30 @@ router.delete("/timetable/:id", requirePermission(PERMISSIONS.COURSES_DELETE), a
 });
 
 /**
+ * ─── SEMESTERS ──────────────────────────────────────────────────────────────
+ */
+
+router.get("/semesters", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const list = await db
+      .select({
+        id: semesters.id,
+        name: semesters.name,
+        startDate: semesters.startDate,
+        endDate: semesters.endDate,
+        isActive: semesters.isActive,
+      })
+      .from(semesters)
+      .orderBy(desc(semesters.isActive), desc(semesters.startDate));
+
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching semesters:", error);
+    res.status(500).json({ error: "Failed to fetch semesters" });
+  }
+});
+
+/**
  * ─── ANNOUNCEMENT MANAGEMENT ────────────────────────────────────────────────
  */
 

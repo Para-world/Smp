@@ -1798,6 +1798,59 @@ router.get(
   }
 );
 
+// ─── GET /api/student/timetable ─────────────────────────────────────────────
+
+router.get(
+  "/timetable",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      
+      const studentEnrollments = await db
+        .select({ courseId: enrollments.courseId })
+        .from(enrollments)
+        .where(eq(enrollments.studentId, userId));
+
+      const courseIds = studentEnrollments.map((e) => e.courseId);
+
+      if (courseIds.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      const schedules = await db
+        .select({
+          id: classSchedules.id,
+          courseId: classSchedules.courseId,
+          instructorId: classSchedules.instructorId,
+          dayOfWeek: classSchedules.dayOfWeek,
+          startTime: classSchedules.startTime,
+          endTime: classSchedules.endTime,
+          room: classSchedules.room,
+          building: classSchedules.building,
+          classType: classSchedules.classType,
+          isOnline: classSchedules.isOnline,
+          meetingUrl: classSchedules.meetingUrl,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          instructorName: users.name,
+        })
+        .from(classSchedules)
+        .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+        .leftJoin(users, eq(classSchedules.instructorId, users.id))
+        .where(inArray(classSchedules.courseId, courseIds))
+        .orderBy(classSchedules.dayOfWeek, classSchedules.startTime);
+
+      res.json(schedules);
+    } catch (error) {
+      console.error("Fetch student timetable error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 // ─── GET /api/student/settings ───────────────────────────────────────────────
 
 router.get(

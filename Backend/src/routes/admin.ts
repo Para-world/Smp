@@ -12,6 +12,7 @@ import {
   studentResults,
   semesters,
   resultAuditLogs,
+  classSchedules,
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -1232,6 +1233,154 @@ router.get("/results/:id/audit", requirePermission(PERMISSIONS.RESULTS_READ), as
   } catch (error) {
     console.error("Error fetching audit logs:", error);
     res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+/**
+ * ─── TIMETABLE MANAGEMENT ───────────────────────────────────────────────────
+ */
+
+/**
+ * Check for scheduling conflicts
+ */
+const checkTimetableConflicts = async (scheduleData: any, excludeId?: string) => {
+  const { dayOfWeek, startTime, endTime, room, instructorId, courseId } = scheduleData;
+  
+  // Basic validation
+  if (startTime >= endTime) {
+    return "Start time must be before end time.";
+  }
+
+  // Fetch schedules for the same day
+  const query = db.select().from(classSchedules).where(eq(classSchedules.dayOfWeek, dayOfWeek));
+  const sameDaySchedules = await query;
+  
+  for (const s of sameDaySchedules) {
+    if (excludeId && s.id === excludeId) continue;
+    
+    // Check time overlap
+    const overlaps = startTime < s.endTime && endTime > s.startTime;
+    
+    if (overlaps) {
+      if (room && s.room === room && !s.isOnline) {
+        return `Conflict detected: Room ${room} is already assigned from ${s.startTime} – ${s.endTime}.`;
+      }
+      if (instructorId && s.instructorId === instructorId) {
+        return `Conflict detected: Instructor is already assigned from ${s.startTime} – ${s.endTime}.`;
+      }
+      if (courseId && s.courseId === courseId) {
+        return `Conflict detected: Course is already scheduled from ${s.startTime} – ${s.endTime}.`;
+      }
+    }
+  }
+  
+  return null;
+};
+
+// GET all schedules
+router.get("/timetable", requirePermission(PERMISSIONS.ACADEMICS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const schedules = await db
+      .select({
+        id: classSchedules.id,
+        courseId: classSchedules.courseId,
+        instructorId: classSchedules.instructorId,
+        dayOfWeek: classSchedules.dayOfWeek,
+        startTime: classSchedules.startTime,
+        endTime: classSchedules.endTime,
+        room: classSchedules.room,
+        building: classSchedules.building,
+        classType: classSchedules.classType,
+        isOnline: classSchedules.isOnline,
+        meetingUrl: classSchedules.meetingUrl,
+        courseCode: courses.code,
+        courseTitle: courses.title,
+        instructorName: users.name,
+      })
+      .from(classSchedules)
+      .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+      .leftJoin(users, eq(classSchedules.instructorId, users.id))
+      .orderBy(classSchedules.dayOfWeek, classSchedules.startTime);
+
+    res.json(schedules);
+  } catch (error) {
+    console.error("Error fetching timetable:", error);
+    res.status(500).json({ error: "Failed to fetch timetable" });
+  }
+});
+
+// POST create schedule
+router.post("/timetable", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+    
+    const conflict = await checkTimetableConflicts(data);
+    if (conflict) {
+      res.status(409).json({ error: conflict });
+      return;
+    }
+
+    const [newSchedule] = await db.insert(classSchedules).values({
+      courseId: data.courseId,
+      instructorId: data.instructorId,
+      dayOfWeek: parseInt(data.dayOfWeek, 10),
+      startTime: data.startTime,
+      endTime: data.endTime,
+      room: data.room,
+      building: data.building,
+      classType: data.classType || 'lecture',
+      isOnline: data.isOnline || false,
+      meetingUrl: data.meetingUrl,
+    }).returning();
+
+    res.json(newSchedule);
+  } catch (error) {
+    console.error("Error creating schedule:", error);
+    res.status(500).json({ error: "Failed to create schedule" });
+  }
+});
+
+// PUT update schedule
+router.put("/timetable/:id", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+    const scheduleId = req.params.id as string;
+    
+    const conflict = await checkTimetableConflicts(data, scheduleId);
+    if (conflict) {
+      res.status(409).json({ error: conflict });
+      return;
+    }
+
+    const [updatedSchedule] = await db.update(classSchedules).set({
+      courseId: data.courseId,
+      instructorId: data.instructorId,
+      dayOfWeek: parseInt(data.dayOfWeek, 10),
+      startTime: data.startTime,
+      endTime: data.endTime,
+      room: data.room,
+      building: data.building,
+      classType: data.classType,
+      isOnline: data.isOnline,
+      meetingUrl: data.meetingUrl,
+      updatedAt: new Date(),
+    }).where(eq(classSchedules.id, scheduleId)).returning();
+
+    res.json(updatedSchedule);
+  } catch (error) {
+    console.error("Error updating schedule:", error);
+    res.status(500).json({ error: "Failed to update schedule" });
+  }
+});
+
+// DELETE schedule
+router.delete("/timetable/:id", requirePermission(PERMISSIONS.ACADEMICS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await db.delete(classSchedules).where(eq(classSchedules.id, req.params.id as string));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting schedule:", error);
+    res.status(500).json({ error: "Failed to delete schedule" });
   }
 });
 

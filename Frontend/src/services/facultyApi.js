@@ -136,3 +136,14 @@ export const updateFacultyExam = async (id, data) => {
   }
   return response.json();
 };
+
+export const fetchFacultyTimetable = async () => {
+  const response = await fetch(`${API_URL}/faculty/timetable`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch timetable');
+  }
+  return response.json();
+};

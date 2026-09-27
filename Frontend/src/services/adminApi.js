@@ -283,3 +283,52 @@ export const fetchResultAuditLogs = async (id) => {
   }
   return response.json();
 };
+
+export const fetchAdminTimetable = async () => {
+  const response = await fetch(`${API_URL}/admin/timetable`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch timetable');
+  }
+  return response.json();
+};
+
+export const createAdminTimetable = async (data) => {
+  const response = await fetch(`${API_URL}/admin/timetable`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to create schedule');
+  }
+  return response.json();
+};
+
+export const updateAdminTimetable = async (id, data) => {
+  const response = await fetch(`${API_URL}/admin/timetable/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update schedule');
+  }
+  return response.json();
+};
+
+export const deleteAdminTimetable = async (id) => {
+  const response = await fetch(`${API_URL}/admin/timetable/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete schedule');
+  }
+  return response.json();
+};

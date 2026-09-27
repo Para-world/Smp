@@ -9,6 +9,7 @@ import {
   submissions,
   grades,
   exams,
+  classSchedules,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
@@ -479,5 +480,46 @@ router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req
     res.status(500).json({ error: "Failed to update exam" });
   }
 });
+
+// ─── GET /api/faculty/timetable ─────────────────────────────────────────────
+
+router.get(
+  "/timetable",
+  requireAuth,
+  requireRole("faculty"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const facultyId = req.user!.userId;
+
+      const schedules = await db
+        .select({
+          id: classSchedules.id,
+          courseId: classSchedules.courseId,
+          instructorId: classSchedules.instructorId,
+          dayOfWeek: classSchedules.dayOfWeek,
+          startTime: classSchedules.startTime,
+          endTime: classSchedules.endTime,
+          room: classSchedules.room,
+          building: classSchedules.building,
+          classType: classSchedules.classType,
+          isOnline: classSchedules.isOnline,
+          meetingUrl: classSchedules.meetingUrl,
+          courseCode: courses.code,
+          courseTitle: courses.title,
+          instructorName: users.name,
+        })
+        .from(classSchedules)
+        .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+        .leftJoin(users, eq(classSchedules.instructorId, users.id))
+        .where(eq(classSchedules.instructorId, facultyId))
+        .orderBy(classSchedules.dayOfWeek, classSchedules.startTime);
+
+      res.json(schedules);
+    } catch (error) {
+      console.error("Fetch faculty timetable error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
 
 export default router;

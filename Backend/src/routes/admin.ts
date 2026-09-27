@@ -14,7 +14,8 @@ import {
   resultAuditLogs,
   classSchedules,
   announcements,
-  notifications
+  notifications,
+  submissions
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -1661,6 +1662,210 @@ router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), asyn
   } catch (error) {
     console.error("Error sending notification:", error);
     res.status(500).json({ error: "Failed to send notification" });
+  }
+});
+
+// ─── REPORTS API ────────────────────────────────────────────────────────
+// GET /api/admin/reports - Fetch report data based on filters
+router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { category, type, program, department, semester, academicYear, course, startDate, endDate } = req.query;
+
+    if (!category || !type) {
+      res.status(400).json({ error: "Report category and type are required" });
+      return;
+    }
+
+    let resultData: any = {};
+
+    // Base conditions
+    const buildStudentConditions = () => {
+      const conditions: any[] = [];
+      if (program) conditions.push(eq(studentProfiles.program, program as string));
+      if (department) conditions.push(eq(studentProfiles.department, department as string));
+      if (semester) conditions.push(eq(studentProfiles.semester, parseInt(semester as string, 10)));
+      if (academicYear) conditions.push(eq(studentProfiles.academicYear, academicYear as string));
+      return conditions;
+    };
+
+    if (category === "students") {
+      const conds = buildStudentConditions();
+      const baseQuery = db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        isActive: users.isActive,
+        program: studentProfiles.program,
+        semester: studentProfiles.semester,
+        enrollmentDate: studentProfiles.enrollmentDate
+      })
+      .from(users)
+      .innerJoin(studentProfiles, eq(users.id, studentProfiles.userId))
+      .where(and(eq(users.role, "student"), ...conds));
+
+      const students = await baseQuery;
+
+      if (type === "enrollment") {
+        resultData = students; // For now just return raw, frontend can aggregate
+      } else if (type === "active_inactive") {
+        const active = students.filter(s => s.isActive).length;
+        const inactive = students.filter(s => !s.isActive).length;
+        resultData = { active, inactive, total: students.length, details: students };
+      } else if (type === "by_semester") {
+        const bySem = students.reduce((acc: any, s) => {
+          const sem = s.semester || 'Unknown';
+          acc[sem] = (acc[sem] || 0) + 1;
+          return acc;
+        }, {});
+        resultData = Object.keys(bySem).map(k => ({ semester: k, count: bySem[k] }));
+      } else if (type === "by_program") {
+        const byProg = students.reduce((acc: any, s) => {
+          const prog = s.program || 'Unknown';
+          acc[prog] = (acc[prog] || 0) + 1;
+          return acc;
+        }, {});
+        resultData = Object.keys(byProg).map(k => ({ program: k, count: byProg[k] }));
+      }
+    } else if (category === "attendance") {
+      // Fetch attendance
+      const conds: any[] = [];
+      if (course) conds.push(eq(courses.id, course as string));
+      if (startDate) conds.push(gte(attendance.date, startDate as string));
+      if (endDate) conds.push(lte(attendance.date, endDate as string));
+
+      const attQuery = await db.select({
+        status: attendance.status,
+        studentId: attendance.studentId,
+        courseId: attendance.courseId,
+        date: attendance.date
+      })
+      .from(attendance)
+      .innerJoin(courses, eq(courses.id, attendance.courseId))
+      .where(and(...conds));
+
+      if (type === "overall") {
+        const present = attQuery.filter(a => a.status === 'present').length;
+        const absent = attQuery.filter(a => a.status === 'absent').length;
+        const late = attQuery.filter(a => a.status === 'late').length;
+        const excused = attQuery.filter(a => a.status === 'excused').length;
+        resultData = { present, absent, late, excused, total: attQuery.length };
+      } else if (type === "course") {
+         const courseStats = attQuery.reduce((acc: any, a) => {
+           if (!acc[a.courseId]) acc[a.courseId] = { present: 0, total: 0 };
+           acc[a.courseId].total++;
+           if (a.status === 'present') acc[a.courseId].present++;
+           return acc;
+         }, {});
+         // Frontend can resolve course names
+         resultData = Object.keys(courseStats).map(cId => ({
+           courseId: cId,
+           percentage: Math.round((courseStats[cId].present / courseStats[cId].total) * 100)
+         }));
+      } else if (type === "low_attendance") {
+        const studentStats = attQuery.reduce((acc: any, a) => {
+          if (!acc[a.studentId]) acc[a.studentId] = { present: 0, total: 0 };
+          acc[a.studentId].total++;
+          if (a.status === 'present') acc[a.studentId].present++;
+          return acc;
+        }, {});
+        
+        const low = Object.keys(studentStats).filter(sId => {
+          return (studentStats[sId].present / studentStats[sId].total) < 0.75;
+        }).map(sId => ({
+           studentId: sId,
+           percentage: Math.round((studentStats[sId].present / studentStats[sId].total) * 100)
+        }));
+        resultData = low;
+      }
+    } else if (category === "academic") {
+      const conds: any[] = [];
+      if (course) conds.push(eq(studentResults.courseId, course as string));
+      if (semester) conds.push(eq(studentResults.semesterId, semester as string));
+
+      const resQuery = await db.select({
+        grade: studentResults.grade,
+        courseId: studentResults.courseId,
+        semesterId: studentResults.semesterId,
+      })
+      .from(studentResults)
+      .where(and(eq(studentResults.status, 'PUBLISHED'), ...conds));
+
+      if (type === "pass_fail") {
+        const pass = resQuery.filter(r => r.grade !== 'F').length;
+        const fail = resQuery.filter(r => r.grade === 'F').length;
+        resultData = { pass, fail, total: resQuery.length };
+      } else if (type === "grade_distribution") {
+        const dist = resQuery.reduce((acc: any, r) => {
+          const g = r.grade || 'NA';
+          acc[g] = (acc[g] || 0) + 1;
+          return acc;
+        }, {});
+        resultData = Object.keys(dist).map(g => ({ grade: g, count: dist[g] }));
+      } else if (type === "course_performance") {
+        const perf = resQuery.reduce((acc: any, r) => {
+           if (!acc[r.courseId]) acc[r.courseId] = { pass: 0, total: 0 };
+           acc[r.courseId].total++;
+           if (r.grade !== 'F') acc[r.courseId].pass++;
+           return acc;
+        }, {});
+        resultData = Object.keys(perf).map(cId => ({
+           courseId: cId,
+           passRate: Math.round((perf[cId].pass / perf[cId].total) * 100)
+        }));
+      }
+    } else if (category === "assignment") {
+      const conds: any[] = [];
+      if (course) conds.push(eq(assignments.courseId, course as string));
+
+      const assignQuery = await db.select({
+        id: assignments.id,
+        courseId: assignments.courseId,
+        title: assignments.title
+      }).from(assignments).where(and(...conds));
+
+      const subQuery = await db.select({
+        assignmentId: submissions.assignmentId,
+        status: submissions.status,
+        submittedAt: submissions.submittedAt
+      }).from(submissions);
+
+      if (type === "submission_rate") {
+        const stats = assignQuery.map(a => {
+           const subs = subQuery.filter(s => s.assignmentId === a.id);
+           return { assignment: a.title, submissions: subs.length };
+        });
+        resultData = stats;
+      } else if (type === "late_submissions") {
+        const late = subQuery.filter(s => s.status === 'late').length;
+        resultData = { late, total: subQuery.length };
+      } else if (type === "grading_completion") {
+        const graded = subQuery.filter(s => s.status === 'graded').length;
+        resultData = { graded, total: subQuery.length };
+      }
+    } else if (category === "exam") {
+      const conds: any[] = [];
+      if (course) conds.push(eq(exams.courseId, course as string));
+      if (startDate) conds.push(gte(exams.date, new Date(startDate as string)));
+      if (endDate) conds.push(lte(exams.date, new Date(endDate as string)));
+
+      const exQuery = await db.select({
+        id: exams.id,
+        title: exams.title,
+        date: exams.date,
+        status: exams.status,
+      }).from(exams).where(and(...conds));
+
+      if (type === "upcoming") {
+        resultData = exQuery.filter(e => e.status === 'SCHEDULED' && new Date(e.date) > new Date());
+      } else if (type === "schedule") {
+        resultData = exQuery.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      }
+    }
+
+    res.json(resultData);
+  } catch (error) {
+    console.error("Error generating report:", error);
+    res.status(500).json({ error: "Failed to generate report" });
   }
 });
 

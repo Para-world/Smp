@@ -416,3 +416,15 @@ export const sendAdminNotification = async (data) => {
   }
   return response.json();
 };
+
+export const fetchAdminReports = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await fetch(`${API_URL}/admin/reports?${query}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch reports');
+  }
+  return response.json();
+};

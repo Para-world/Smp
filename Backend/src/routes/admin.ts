@@ -1278,7 +1278,7 @@ const checkTimetableConflicts = async (scheduleData: any, excludeId?: string) =>
 };
 
 // GET all schedules
-router.get("/timetable", requirePermission(PERMISSIONS.ACADEMICS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+router.get("/timetable", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const schedules = await db
       .select({
@@ -1310,7 +1310,7 @@ router.get("/timetable", requirePermission(PERMISSIONS.ACADEMICS_READ), async (r
 });
 
 // POST create schedule
-router.post("/timetable", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/timetable", requirePermission(PERMISSIONS.COURSES_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const data = req.body;
     
@@ -1341,7 +1341,7 @@ router.post("/timetable", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), async
 });
 
 // PUT update schedule
-router.put("/timetable/:id", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.put("/timetable/:id", requirePermission(PERMISSIONS.COURSES_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const data = req.body;
     const scheduleId = req.params.id as string;
@@ -1374,7 +1374,7 @@ router.put("/timetable/:id", requirePermission(PERMISSIONS.ACADEMICS_UPDATE), as
 });
 
 // DELETE schedule
-router.delete("/timetable/:id", requirePermission(PERMISSIONS.ACADEMICS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.delete("/timetable/:id", requirePermission(PERMISSIONS.COURSES_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await db.delete(classSchedules).where(eq(classSchedules.id, req.params.id as string));
     res.json({ success: true });

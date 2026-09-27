@@ -12,7 +12,7 @@ import {
   classSchedules,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
-import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
+import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
 
 const router = Router();

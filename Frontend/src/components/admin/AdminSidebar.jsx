@@ -93,7 +93,7 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
 
       {/* Navigation */}
       <TooltipProvider delayDuration={150}>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-none">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
           {navGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {group.title && (!collapsed || isMobile) && (

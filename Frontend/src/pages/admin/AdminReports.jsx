@@ -207,6 +207,7 @@ export default function AdminReports() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
 
           {/* Filters */}

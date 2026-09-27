@@ -1390,7 +1390,7 @@ router.delete("/timetable/:id", requirePermission(PERMISSIONS.COURSES_DELETE), a
  */
 
 // GET all announcements
-router.get("/announcements", requirePermission(PERMISSIONS.USERS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+router.get("/announcements", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const list = await db
       .select({
@@ -1423,7 +1423,7 @@ router.get("/announcements", requirePermission(PERMISSIONS.USERS_READ), async (r
 });
 
 // POST create announcement
-router.post("/announcements", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/announcements", requirePermission(PERMISSIONS.COURSES_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const data = req.body;
 
@@ -1452,14 +1452,14 @@ router.post("/announcements", requirePermission(PERMISSIONS.USERS_UPDATE), async
 });
 
 // PUT update announcement
-router.put("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.put("/announcements/:id", requirePermission(PERMISSIONS.COURSES_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const data = req.body;
     
     // Check if status changes to PUBLISHED to set publishedAt
     let publishedAt = undefined;
     if (data.status === 'PUBLISHED') {
-      const existing = await db.select({ status: announcements.status }).from(announcements).where(eq(announcements.id, req.params.id));
+      const existing = await db.select({ status: announcements.status }).from(announcements).where(eq(announcements.id, req.params.id as string));
       if (existing[0] && existing[0].status !== 'PUBLISHED') {
         publishedAt = new Date();
       }
@@ -1479,7 +1479,7 @@ router.put("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), as
       isPinned: data.isPinned,
       publishedAt: publishedAt,
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-    }).where(eq(announcements.id, req.params.id)).returning();
+    }).where(eq(announcements.id, req.params.id as string)).returning();
 
     res.json(updated);
   } catch (error) {
@@ -1489,7 +1489,7 @@ router.put("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), as
 });
 
 // DELETE announcement
-router.delete("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.delete("/announcements/:id", requirePermission(PERMISSIONS.COURSES_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     await db.delete(announcements).where(eq(announcements.id, req.params.id as string));
     res.json({ success: true });

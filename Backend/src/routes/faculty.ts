@@ -612,7 +612,7 @@ router.put("/announcements/:id", requireAuth, requireRole("faculty"), async (req
     const facultyId = req.user!.userId;
     
     // Check ownership
-    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId)));
+    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id as string), eq(announcements.authorId, facultyId)));
     if (existing.length === 0) {
       res.status(404).json({ error: "Announcement not found or unauthorized" });
       return;
@@ -645,7 +645,7 @@ router.put("/announcements/:id", requireAuth, requireRole("faculty"), async (req
       isPinned: data.isPinned,
       publishedAt: publishedAt,
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-    }).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId))).returning();
+    }).where(and(eq(announcements.id, req.params.id as string), eq(announcements.authorId, facultyId))).returning();
 
     res.json(updated);
   } catch (error) {
@@ -658,12 +658,12 @@ router.put("/announcements/:id", requireAuth, requireRole("faculty"), async (req
 router.delete("/announcements/:id", requireAuth, requireRole("faculty"), async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const facultyId = req.user!.userId;
-    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId)));
+    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id as string), eq(announcements.authorId, facultyId)));
     if (existing.length === 0) {
       res.status(404).json({ error: "Announcement not found or unauthorized" });
       return;
     }
-    await db.delete(announcements).where(eq(announcements.id, req.params.id as string));
+    await db.delete(announcements).where(and(eq(announcements.id, req.params.id as string), eq(announcements.authorId, facultyId)));
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting faculty announcement:", error);

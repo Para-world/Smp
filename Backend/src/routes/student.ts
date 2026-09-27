@@ -24,7 +24,7 @@ import {
   userSettings,
   trustedDevices,
 } from "../db/schema.js";
-import { eq, and, desc, gte, lte, sql, count, avg, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, count, avg, inArray, or } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
 import { z } from "zod";
 
@@ -1876,11 +1876,11 @@ router.get(
       const audienceConditions = [eq(announcements.audience, 'ALL')];
       
       if (studentProgram) {
-        audienceConditions.push(and(eq(announcements.audience, 'PROGRAM'), eq(announcements.program, studentProgram)));
+        audienceConditions.push(and(eq(announcements.audience, 'PROGRAM'), eq(announcements.program, studentProgram as string))!);
       }
       
       if (courseIds.length > 0) {
-        audienceConditions.push(and(eq(announcements.audience, 'COURSE'), inArray(announcements.courseId, courseIds)));
+        audienceConditions.push(and(eq(announcements.audience, 'COURSE'), inArray(announcements.courseId, courseIds))!);
       }
 
       // To handle semester, if student has a semester ID or integer

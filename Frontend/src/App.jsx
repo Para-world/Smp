@@ -45,6 +45,7 @@ import AdminResultCreate from './pages/admin/AdminResultCreate'
 import AdminResultBulkImport from './pages/admin/AdminResultBulkImport'
 import AdminTimetable from './pages/admin/AdminTimetable'
 import AdminAnnouncements from './pages/admin/AdminAnnouncements'
+import AdminNotifications from './pages/admin/AdminNotifications'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -534,6 +535,14 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminAnnouncements />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminRoute>
+              <AdminNotifications />
             </AdminRoute>
           }
         />

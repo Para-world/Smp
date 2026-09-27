@@ -39,3 +39,24 @@ export const sendOTP = async (to: string, code: string) => {
     // We do NOT throw here so that the UI can still show the verification screen!
   }
 };
+
+export const sendNotificationEmail = async (to: string, subject: string, htmlContent: string) => {
+  try {
+    await transporter.sendMail({
+      from: `"EduSphere Notifications" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          ${htmlContent}
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888; text-align: center;">
+            <p>This is an automated message from EduSphere. Please do not reply.</p>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`✅ Notification email sent successfully to ${to}`);
+  } catch (error) {
+    console.error(`⚠️ Failed to send notification email to ${to}:`, error);
+  }
+};

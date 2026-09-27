@@ -11,10 +11,12 @@ import {
   exams,
   classSchedules,
   announcements,
+  notifications,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
+import { sendNotificationEmail } from "../utils/mailer.js";
 
 const router = Router();
 
@@ -198,6 +200,41 @@ router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), a
       maxAttempts: maxAttempts ? parseInt(maxAttempts) : 1,
       isPublished: true, // Assuming published immediately for simplicity
     }).returning();
+
+    // Notify enrolled students
+    setImmediate(async () => {
+      try {
+        const enrolledStudents = await db.select({ id: users.id, email: users.email }).from(enrollments)
+          .innerJoin(users, eq(users.id, enrollments.studentId))
+          .where(eq(enrollments.courseId, courseId));
+          
+        for (const student of enrolledStudents) {
+          // Send Email
+          await sendNotificationEmail(
+            student.email,
+            `New Assignment: ${title}`,
+            `
+            <h2 style="color: #333; margin-bottom: 16px;">New Assignment Posted</h2>
+            <p style="color: #555;">A new assignment <strong>${title}</strong> has been posted in ${course.code}.</p>
+            <p style="color: #555;">Due Date: ${dueDate ? new Date(dueDate).toLocaleString() : 'No due date'}</p>
+            `
+          );
+
+          // Add in-app notification
+          await db.insert(notifications).values({
+            userId: student.id,
+            title: `New Assignment: ${title}`,
+            message: `A new assignment has been posted for ${course.code}.`,
+            type: 'ASSIGNMENT_CREATED',
+            entityType: 'assignment',
+            entityId: assignment.id,
+            priority: 'NORMAL'
+          });
+        }
+      } catch (e) {
+        console.error("Failed to send assignment notifications:", e);
+      }
+    });
 
     res.status(201).json(assignment);
   } catch (error) {

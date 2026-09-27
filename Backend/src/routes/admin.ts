@@ -14,11 +14,13 @@ import {
   resultAuditLogs,
   classSchedules,
   announcements,
+  notifications
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
+import { sendNotificationEmail } from "../utils/mailer.js";
 
 const router = Router();
 
@@ -1103,6 +1105,40 @@ router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async 
       reason: req.body.reason || `Status changed to ${status}`,
     });
 
+    // Send email notification if result just got published
+    if (existing.status !== 'PUBLISHED' && status === 'PUBLISHED') {
+      const [student] = await db.select({ email: users.email }).from(users).where(eq(users.id, result.studentId));
+      const [course] = await db.select({ title: courses.title, code: courses.code }).from(courses).where(eq(courses.id, result.courseId));
+      if (student && course) {
+        setImmediate(async () => {
+          try {
+            await sendNotificationEmail(
+              student.email,
+              `Result Published: ${course.code}`,
+              `
+              <h2 style="color: #333; margin-bottom: 16px;">Result Published</h2>
+              <p style="color: #555;">Your result for the course <strong>${course.code} - ${course.title}</strong> has been published by the administration.</p>
+              <p style="color: #555; margin-top: 20px;">You can log in to your student portal to view your grades.</p>
+              `
+            );
+            
+            // Insert in-app notification
+            await db.insert(notifications).values({
+              userId: result.studentId,
+              title: `Result Published: ${course.code}`,
+              message: `Your result for the course ${course.code} has been published.`,
+              type: 'RESULT_PUBLISHED',
+              entityType: 'result',
+              entityId: result.id,
+              priority: 'IMPORTANT'
+            });
+          } catch (e) {
+             console.error(`Failed to send result email to ${student.email}`, e);
+          }
+        });
+      }
+    }
+
     res.json(result);
   } catch(error) {
     res.status(500).json({ error: "Failed to update" });
@@ -1520,6 +1556,101 @@ router.delete("/announcements/:id", requirePermission(PERMISSIONS.COURSES_UPDATE
   } catch (error) {
     console.error("Error deleting announcement:", error);
     res.status(500).json({ error: "Failed to delete announcement" });
+  }
+});
+
+// ─── NOTIFICATIONS API ────────────────────────────────────────────────────────
+// GET /api/admin/notifications - List all notifications sent
+router.get("/notifications", requirePermission(PERMISSIONS.SYSTEM_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const list = await db.select().from(notifications).orderBy(desc(notifications.createdAt)).limit(100);
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+});
+
+// POST /api/admin/notifications - Send a new notification
+router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { title, message, type, priority, audience, program, semesterId, courseId, targetStudentId, sendEmail } = req.body;
+    
+    if (!title || !message || !audience) {
+      res.status(400).json({ error: "Title, message, and audience are required" });
+      return;
+    }
+
+    // Determine target users
+    let targetUsers: { id: string, email: string, name: string }[] = [];
+
+    if (audience === 'ALL_STUDENTS') {
+      targetUsers = await db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.role, "student"));
+    } else if (audience === 'FACULTY') {
+      targetUsers = await db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.role, "faculty"));
+    } else if (audience === 'SPECIFIC_PROGRAM' && program) {
+      const studs = await db.select({ id: users.id, email: users.email, name: users.name })
+        .from(studentProfiles)
+        .innerJoin(users, eq(users.id, studentProfiles.userId))
+        .where(eq(studentProfiles.program, program));
+      targetUsers = studs;
+    } else if (audience === 'SPECIFIC_SEMESTER' && semesterId) {
+       const studs = await db.select({ id: users.id, email: users.email, name: users.name })
+        .from(studentProfiles)
+        .innerJoin(users, eq(users.id, studentProfiles.userId))
+        .where(eq(studentProfiles.currentSemesterId, semesterId));
+      targetUsers = studs;
+    } else if (audience === 'SPECIFIC_COURSE' && courseId) {
+      const studs = await db.select({ id: users.id, email: users.email, name: users.name })
+        .from(enrollments)
+        .innerJoin(users, eq(users.id, enrollments.studentId))
+        .where(eq(enrollments.courseId, courseId));
+      targetUsers = studs;
+    } else if (audience === 'SPECIFIC_STUDENT' && targetStudentId) {
+      const stud = await db.select({ id: users.id, email: users.email, name: users.name }).from(users).where(eq(users.id, targetStudentId));
+      if (stud.length > 0) targetUsers = stud;
+    } else {
+      res.status(400).json({ error: "Invalid audience or missing audience specific ID" });
+      return;
+    }
+
+    if (targetUsers.length === 0) {
+      res.status(400).json({ error: "No users found for the specified audience" });
+      return;
+    }
+
+    // Insert notifications into DB
+    const insertData = targetUsers.map(user => ({
+      userId: user.id,
+      title,
+      message,
+      type: type || 'SYSTEM',
+      priority: priority || 'NORMAL',
+    }));
+
+    await db.insert(notifications).values(insertData);
+
+    // Send emails async if requested
+    if (sendEmail) {
+      // Async email sending without blocking the API response
+      setImmediate(async () => {
+        for (const user of targetUsers) {
+          try {
+            await sendNotificationEmail(user.email, title, `
+              <h2 style="color: #333; margin-bottom: 16px;">${title}</h2>
+              <p style="color: #555; white-space: pre-wrap;">${message}</p>
+            `);
+          } catch (e) {
+            console.error(`Failed to send email to ${user.email}`, e);
+          }
+        }
+      });
+    }
+
+    res.json({ success: true, count: targetUsers.length, message: `Notification sent to ${targetUsers.length} users.` });
+  } catch (error) {
+    console.error("Error sending notification:", error);
+    res.status(500).json({ error: "Failed to send notification" });
   }
 });
 

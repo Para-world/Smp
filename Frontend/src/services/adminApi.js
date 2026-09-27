@@ -392,3 +392,27 @@ export const fetchAdminSemesters = async () => {
   }
   return response.json();
 };
+
+export const fetchAdminNotifications = async () => {
+  const response = await fetch(`${API_URL}/admin/notifications`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch notifications');
+  }
+  return response.json();
+};
+
+export const sendAdminNotification = async (data) => {
+  const response = await fetch(`${API_URL}/admin/notifications`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to send notification');
+  }
+  return response.json();
+};

@@ -332,3 +332,52 @@ export const deleteAdminTimetable = async (id) => {
   }
   return response.json();
 };
+
+export const fetchAdminAnnouncements = async () => {
+  const response = await fetch(`${API_URL}/admin/announcements`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch announcements');
+  }
+  return response.json();
+};
+
+export const createAdminAnnouncement = async (data) => {
+  const response = await fetch(`${API_URL}/admin/announcements`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to create announcement');
+  }
+  return response.json();
+};
+
+export const updateAdminAnnouncement = async (id, data) => {
+  const response = await fetch(`${API_URL}/admin/announcements/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update announcement');
+  }
+  return response.json();
+};
+
+export const deleteAdminAnnouncement = async (id) => {
+  const response = await fetch(`${API_URL}/admin/announcements/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete announcement');
+  }
+  return response.json();
+};

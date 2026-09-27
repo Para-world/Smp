@@ -440,3 +440,18 @@ export async function logoutAllDevices() {
 
   return res.json();
 }
+
+export async function fetchAnnouncements(filters = {}) {
+  const query = new URLSearchParams(filters).toString();
+  const url = query ? `${API_URL}/student/announcements?${query}` : `${API_URL}/student/announcements`;
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to load announcements');
+  }
+
+  return res.json();
+}

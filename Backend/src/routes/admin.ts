@@ -13,6 +13,7 @@ import {
   semesters,
   resultAuditLogs,
   classSchedules,
+  announcements,
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -1381,6 +1382,120 @@ router.delete("/timetable/:id", requirePermission(PERMISSIONS.COURSES_DELETE), a
   } catch (error) {
     console.error("Error deleting schedule:", error);
     res.status(500).json({ error: "Failed to delete schedule" });
+  }
+});
+
+/**
+ * ─── ANNOUNCEMENT MANAGEMENT ────────────────────────────────────────────────
+ */
+
+// GET all announcements
+router.get("/announcements", requirePermission(PERMISSIONS.USERS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const list = await db
+      .select({
+        id: announcements.id,
+        title: announcements.title,
+        content: announcements.content,
+        category: announcements.category,
+        priority: announcements.priority,
+        audience: announcements.audience,
+        program: announcements.program,
+        semesterId: announcements.semesterId,
+        courseId: announcements.courseId,
+        attachments: announcements.attachments,
+        status: announcements.status,
+        isPinned: announcements.isPinned,
+        publishedAt: announcements.publishedAt,
+        expiresAt: announcements.expiresAt,
+        createdAt: announcements.createdAt,
+        authorName: users.name,
+      })
+      .from(announcements)
+      .leftJoin(users, eq(announcements.authorId, users.id))
+      .orderBy(desc(announcements.createdAt));
+
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching announcements:", error);
+    res.status(500).json({ error: "Failed to fetch announcements" });
+  }
+});
+
+// POST create announcement
+router.post("/announcements", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+
+    const [newAnn] = await db.insert(announcements).values({
+      title: data.title,
+      content: data.content,
+      category: data.category || 'GENERAL',
+      priority: data.priority || 'NORMAL',
+      audience: data.audience || 'ALL',
+      program: data.program,
+      semesterId: data.semesterId,
+      courseId: data.courseId,
+      attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+      status: data.status || 'DRAFT',
+      isPinned: data.isPinned || false,
+      publishedAt: data.status === 'PUBLISHED' ? new Date() : null,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      authorId: req.user!.userId,
+    }).returning();
+
+    res.json(newAnn);
+  } catch (error) {
+    console.error("Error creating announcement:", error);
+    res.status(500).json({ error: "Failed to create announcement" });
+  }
+});
+
+// PUT update announcement
+router.put("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+    
+    // Check if status changes to PUBLISHED to set publishedAt
+    let publishedAt = undefined;
+    if (data.status === 'PUBLISHED') {
+      const existing = await db.select({ status: announcements.status }).from(announcements).where(eq(announcements.id, req.params.id));
+      if (existing[0] && existing[0].status !== 'PUBLISHED') {
+        publishedAt = new Date();
+      }
+    }
+
+    const [updated] = await db.update(announcements).set({
+      title: data.title,
+      content: data.content,
+      category: data.category,
+      priority: data.priority,
+      audience: data.audience,
+      program: data.program,
+      semesterId: data.semesterId,
+      courseId: data.courseId,
+      attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+      status: data.status,
+      isPinned: data.isPinned,
+      publishedAt: publishedAt,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+    }).where(eq(announcements.id, req.params.id)).returning();
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating announcement:", error);
+    res.status(500).json({ error: "Failed to update announcement" });
+  }
+});
+
+// DELETE announcement
+router.delete("/announcements/:id", requirePermission(PERMISSIONS.USERS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await db.delete(announcements).where(eq(announcements.id, req.params.id as string));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting announcement:", error);
+    res.status(500).json({ error: "Failed to delete announcement" });
   }
 });
 

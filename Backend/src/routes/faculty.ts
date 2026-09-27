@@ -10,6 +10,7 @@ import {
   grades,
   exams,
   classSchedules,
+  announcements,
 } from "../db/schema.js";
 import { eq, count, and, desc } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
@@ -521,5 +522,153 @@ router.get(
     }
   }
 );
+
+/**
+ * ─── ANNOUNCEMENT MANAGEMENT ────────────────────────────────────────────────
+ */
+
+// GET faculty's announcements
+router.get("/announcements", requireAuth, requireRole("faculty"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const list = await db
+      .select({
+        id: announcements.id,
+        title: announcements.title,
+        content: announcements.content,
+        category: announcements.category,
+        priority: announcements.priority,
+        audience: announcements.audience,
+        program: announcements.program,
+        semesterId: announcements.semesterId,
+        courseId: announcements.courseId,
+        attachments: announcements.attachments,
+        status: announcements.status,
+        isPinned: announcements.isPinned,
+        publishedAt: announcements.publishedAt,
+        expiresAt: announcements.expiresAt,
+        createdAt: announcements.createdAt,
+      })
+      .from(announcements)
+      .where(eq(announcements.authorId, req.user!.userId))
+      .orderBy(desc(announcements.createdAt));
+
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching faculty announcements:", error);
+    res.status(500).json({ error: "Failed to fetch announcements" });
+  }
+});
+
+// POST create announcement
+router.post("/announcements", requireAuth, requireRole("faculty"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+    const facultyId = req.user!.userId;
+
+    // Faculty specific authorization check
+    if (data.audience === 'COURSE') {
+      if (!data.courseId) {
+        res.status(400).json({ error: "Course ID is required for COURSE audience" });
+        return;
+      }
+      const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
+      if (course.length === 0) {
+        res.status(403).json({ error: "Not authorized to publish to this course" });
+        return;
+      }
+    } else if (data.audience === 'ALL') {
+      res.status(403).json({ error: "Faculty cannot publish to ALL students. Please contact Admin." });
+      return;
+    }
+
+    const [newAnn] = await db.insert(announcements).values({
+      title: data.title,
+      content: data.content,
+      category: data.category || 'GENERAL',
+      priority: data.priority || 'NORMAL',
+      audience: data.audience || 'COURSE',
+      program: data.program,
+      semesterId: data.semesterId,
+      courseId: data.courseId,
+      attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+      status: data.status || 'DRAFT',
+      isPinned: data.isPinned || false,
+      publishedAt: data.status === 'PUBLISHED' ? new Date() : null,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      authorId: facultyId,
+    }).returning();
+
+    res.json(newAnn);
+  } catch (error) {
+    console.error("Error creating faculty announcement:", error);
+    res.status(500).json({ error: "Failed to create announcement" });
+  }
+});
+
+// PUT update announcement
+router.put("/announcements/:id", requireAuth, requireRole("faculty"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = req.body;
+    const facultyId = req.user!.userId;
+    
+    // Check ownership
+    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId)));
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Announcement not found or unauthorized" });
+      return;
+    }
+
+    if (data.audience === 'COURSE' && data.courseId) {
+      const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
+      if (course.length === 0) {
+        res.status(403).json({ error: "Not authorized to publish to this course" });
+        return;
+      }
+    }
+
+    let publishedAt = undefined;
+    if (data.status === 'PUBLISHED' && existing[0].status !== 'PUBLISHED') {
+      publishedAt = new Date();
+    }
+
+    const [updated] = await db.update(announcements).set({
+      title: data.title,
+      content: data.content,
+      category: data.category,
+      priority: data.priority,
+      audience: data.audience,
+      program: data.program,
+      semesterId: data.semesterId,
+      courseId: data.courseId,
+      attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+      status: data.status,
+      isPinned: data.isPinned,
+      publishedAt: publishedAt,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+    }).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId))).returning();
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating faculty announcement:", error);
+    res.status(500).json({ error: "Failed to update announcement" });
+  }
+});
+
+// DELETE announcement
+router.delete("/announcements/:id", requireAuth, requireRole("faculty"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+    const existing = await db.select().from(announcements).where(and(eq(announcements.id, req.params.id), eq(announcements.authorId, facultyId)));
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Announcement not found or unauthorized" });
+      return;
+    }
+    await db.delete(announcements).where(eq(announcements.id, req.params.id as string));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting faculty announcement:", error);
+    res.status(500).json({ error: "Failed to delete announcement" });
+  }
+});
 
 export default router;

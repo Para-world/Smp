@@ -409,6 +409,9 @@ export const attendance = pgTable("attendance", {
 
 // ─── Announcements ───────────────────────────────────────────────────────────
 
+export const announcementAudienceEnum = pgEnum("announcement_audience", ["ALL", "PROGRAM", "SEMESTER", "COURSE"]);
+export const announcementStatusEnum = pgEnum("announcement_status", ["DRAFT", "PUBLISHED", "EXPIRED"]);
+
 export const announcements = pgTable("announcements", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -420,8 +423,13 @@ export const announcements = pgTable("announcements", {
     .references(() => users.id),
   departmentId: uuid("department_id").references(() => departments.id),
   courseId: uuid("course_id").references(() => courses.id),
+  audience: announcementAudienceEnum("audience").notNull().default("ALL"),
+  program: varchar("program", { length: 255 }),
+  semesterId: uuid("semester_id").references(() => semesters.id),
+  attachments: text("attachments"), // JSON string or CSV of URLs
+  status: announcementStatusEnum("status").notNull().default("DRAFT"),
   isPinned: boolean("is_pinned").notNull().default(false),
-  publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

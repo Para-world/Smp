@@ -44,6 +44,7 @@ import AdminResults from './pages/admin/AdminResults'
 import AdminResultCreate from './pages/admin/AdminResultCreate'
 import AdminResultBulkImport from './pages/admin/AdminResultBulkImport'
 import AdminTimetable from './pages/admin/AdminTimetable'
+import AdminAnnouncements from './pages/admin/AdminAnnouncements'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -52,6 +53,7 @@ import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
 import FacultyExams from './pages/faculty/FacultyExams'
 import FacultyExamCreate from './pages/faculty/FacultyExamCreate'
 import FacultyTimetable from './pages/faculty/FacultyTimetable'
+import FacultyAnnouncements from './pages/faculty/FacultyAnnouncements'
 import FacultyLayout from './components/faculty/FacultyLayout'
 
 // Protected route wrapper
@@ -527,6 +529,14 @@ function AppContent() {
             </AdminRoute>
           }
         />
+        <Route
+          path="/admin/announcements"
+          element={
+            <AdminRoute>
+              <AdminAnnouncements />
+            </AdminRoute>
+          }
+        />
 
         {/* Faculty Routes */}
         <Route
@@ -590,6 +600,14 @@ function AppContent() {
           element={
             <FacultyRoute>
               <FacultyTimetable />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/announcements"
+          element={
+            <FacultyRoute>
+              <FacultyAnnouncements />
             </FacultyRoute>
           }
         />

@@ -147,3 +147,52 @@ export const fetchFacultyTimetable = async () => {
   }
   return response.json();
 };
+
+export const fetchFacultyAnnouncements = async () => {
+  const response = await fetch(`${API_URL}/faculty/announcements`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch announcements');
+  }
+  return response.json();
+};
+
+export const createFacultyAnnouncement = async (data) => {
+  const response = await fetch(`${API_URL}/faculty/announcements`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to create announcement');
+  }
+  return response.json();
+};
+
+export const updateFacultyAnnouncement = async (id, data) => {
+  const response = await fetch(`${API_URL}/faculty/announcements/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update announcement');
+  }
+  return response.json();
+};
+
+export const deleteFacultyAnnouncement = async (id) => {
+  const response = await fetch(`${API_URL}/faculty/announcements/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete announcement');
+  }
+  return response.json();
+};

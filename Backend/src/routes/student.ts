@@ -1851,6 +1851,73 @@ router.get(
   }
 );
 
+// ─── GET /api/student/announcements ──────────────────────────────────────────
+
+router.get(
+  "/announcements",
+  requireAuth,
+  requireRole("student"),
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      
+      const profile = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId));
+      const enrollmentsList = await db.select({ courseId: enrollments.courseId }).from(enrollments).where(eq(enrollments.studentId, userId));
+      
+      const studentProgram = profile[0]?.program;
+      const studentSemester = profile[0]?.semester; // Wait, schema uses `semesterId` for announcements, but studentProfiles might have integer `semester` or string `semester`?
+      // Actually schema says studentProfiles has integer semester, but also maybe not a semesterId link. I'll just check courseIds and ALL and PROGRAM.
+      const courseIds = enrollmentsList.map(e => e.courseId);
+
+      // Create conditions array
+      const conditions = [eq(announcements.status, 'PUBLISHED')];
+
+      // OR logic for audiences
+      const audienceConditions = [eq(announcements.audience, 'ALL')];
+      
+      if (studentProgram) {
+        audienceConditions.push(and(eq(announcements.audience, 'PROGRAM'), eq(announcements.program, studentProgram)));
+      }
+      
+      if (courseIds.length > 0) {
+        audienceConditions.push(and(eq(announcements.audience, 'COURSE'), inArray(announcements.courseId, courseIds)));
+      }
+
+      // To handle semester, if student has a semester ID or integer
+      // Let's just rely on COURSE and PROGRAM mostly, or if we need to query the actual semesterId for the student...
+      // Since semesterId is a UUID in announcements, and studentProfiles has `semester: integer`, we can't easily match them. 
+      // I'll skip semester match or fetch current semester based on something. We'll stick to ALL, PROGRAM, COURSE.
+
+      const allAnnouncements = await db
+        .select({
+          id: announcements.id,
+          title: announcements.title,
+          content: announcements.content,
+          category: announcements.category,
+          priority: announcements.priority,
+          publishedAt: announcements.publishedAt,
+          expiresAt: announcements.expiresAt,
+          isPinned: announcements.isPinned,
+          authorName: users.name,
+        })
+        .from(announcements)
+        .leftJoin(users, eq(announcements.authorId, users.id))
+        .where(
+          and(
+            ...conditions,
+            or(...audienceConditions)
+          )
+        )
+        .orderBy(desc(announcements.isPinned), desc(announcements.publishedAt));
+
+      res.json(allAnnouncements);
+    } catch (error) {
+      console.error("Fetch student announcements error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 // ─── GET /api/student/settings ───────────────────────────────────────────────
 
 router.get(

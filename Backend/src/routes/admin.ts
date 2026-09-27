@@ -1397,10 +1397,10 @@ router.get("/semesters", requirePermission(PERMISSIONS.COURSES_READ), async (req
         name: semesters.name,
         startDate: semesters.startDate,
         endDate: semesters.endDate,
-        isActive: semesters.isActive,
+        status: semesters.status,
       })
       .from(semesters)
-      .orderBy(desc(semesters.isActive), desc(semesters.startDate));
+      .orderBy(desc(semesters.status), desc(semesters.startDate));
 
     res.json(list);
   } catch (error) {

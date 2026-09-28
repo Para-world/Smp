@@ -2035,5 +2035,102 @@ router.post("/settings", requirePermission(PERMISSIONS.SETTINGS_UPDATE), async (
     res.status(500).json({ error: "Failed to update system settings" });
   }
 });
+// ─── SEMESTERS / ACADEMIC YEAR API ─────────────────────────────────────────
+
+// GET /api/admin/semesters - Fetch all semesters
+router.get("/semesters", requirePermission(PERMISSIONS.SYSTEM_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = await db.select().from(semesters).orderBy(desc(semesters.startDate));
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching semesters:", error);
+    res.status(500).json({ error: "Failed to fetch semesters" });
+  }
+});
+
+// POST /api/admin/semesters - Create a new semester
+router.post("/semesters", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name, code, academicYear, startDate, endDate, status } = req.body;
+    
+    if (!name || !code || !startDate || !endDate) {
+      res.status(400).json({ error: "Name, code, start date, and end date are required" });
+      return;
+    }
+
+    const [newSemester] = await db.insert(semesters).values({
+      name,
+      code,
+      academicYear,
+      startDate,
+      endDate,
+      status: status || "upcoming"
+    }).returning();
+
+    await logAudit(
+      req.user!.userId,
+      "CREATE",
+      "SEMESTER",
+      newSemester.id,
+      null,
+      newSemester,
+      req.ip,
+      req.headers["user-agent"]
+    );
+
+    res.status(201).json(newSemester);
+  } catch (error: any) {
+    console.error("Error creating semester:", error);
+    if (error.code === '23505') { // unique violation
+      res.status(400).json({ error: "Semester code already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to create semester" });
+    }
+  }
+});
+
+// PUT /api/admin/semesters/:id - Update a semester
+router.put("/semesters/:id", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { name, code, academicYear, startDate, endDate, status } = req.body;
+
+    const [existing] = await db.select().from(semesters).where(eq(semesters.id, id));
+    if (!existing) {
+      res.status(404).json({ error: "Semester not found" });
+      return;
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (code !== undefined) updateData.code = code;
+    if (academicYear !== undefined) updateData.academicYear = academicYear;
+    if (startDate !== undefined) updateData.startDate = startDate;
+    if (endDate !== undefined) updateData.endDate = endDate;
+    if (status !== undefined) updateData.status = status;
+
+    const [updated] = await db.update(semesters).set(updateData).where(eq(semesters.id, id)).returning();
+
+    await logAudit(
+      req.user!.userId,
+      "UPDATE",
+      "SEMESTER",
+      updated.id,
+      existing,
+      updated,
+      req.ip,
+      req.headers["user-agent"]
+    );
+
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating semester:", error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: "Semester code already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to update semester" });
+    }
+  }
+});
 
 export default router;

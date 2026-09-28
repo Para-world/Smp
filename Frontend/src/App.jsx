@@ -49,6 +49,7 @@ import AdminNotifications from './pages/admin/AdminNotifications'
 import AdminReports from './pages/admin/AdminReports'
 import AdminAuditLogs from './pages/admin/AdminAuditLogs'
 import AdminSettings from './pages/admin/AdminSettings'
+import AdminSemesters from './pages/admin/AdminSemesters'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -566,6 +567,14 @@ function AppContent() {
           }
         />
 
+        <Route
+          path="/admin/semesters"
+          element={
+            <AdminRoute>
+              <AdminSemesters />
+            </AdminRoute>
+          }
+        />
         <Route
           path="/admin/settings"
           element={

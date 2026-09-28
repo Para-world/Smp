@@ -241,6 +241,7 @@ export const semesters = pgTable("semesters", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   code: varchar("code", { length: 20 }).notNull().unique(),
+  academicYear: varchar("academic_year", { length: 20 }),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   status: semesterStatusEnum("status").notNull().default("upcoming"),

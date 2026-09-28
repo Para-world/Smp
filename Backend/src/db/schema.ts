@@ -496,6 +496,19 @@ export const resultAuditLogs = pgTable("result_audit_logs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const systemAuditLogs = pgTable("system_audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  actorId: uuid("actor_id").references(() => users.id),
+  action: varchar("action", { length: 255 }).notNull(),
+  entity: varchar("entity", { length: 255 }).notNull(),
+  entityId: varchar("entity_id", { length: 255 }),
+  oldValue: jsonb("old_value"),
+  newValue: jsonb("new_value"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -598,4 +611,8 @@ export const semesterResultsRelations = relations(semesterResults, ({ one }) => 
 export const resultAuditLogsRelations = relations(resultAuditLogs, ({ one }) => ({
   result: one(studentResults, { fields: [resultAuditLogs.resultId], references: [studentResults.id] }),
   changer: one(users, { fields: [resultAuditLogs.changedBy], references: [users.id] }),
+}));
+
+export const systemAuditLogsRelations = relations(systemAuditLogs, ({ one }) => ({
+  actor: one(users, { fields: [systemAuditLogs.actorId], references: [users.id] }),
 }));

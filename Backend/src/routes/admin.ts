@@ -15,7 +15,8 @@ import {
   classSchedules,
   announcements,
   notifications,
-  submissions
+  submissions,
+  systemAuditLogs
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -23,6 +24,7 @@ import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware
 import { PERMISSIONS } from "../utils/permissions.js";
 import { sendNotificationEmail } from "../utils/mailer.js";
 import { jsonToCsv } from "../utils/csv.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 const router = Router();
 
@@ -273,6 +275,16 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
 
       return { user: newUser, profile: newProfile };
     });
+    await logAudit(
+      req.user!.id,
+      "CREATE",
+      "STUDENT",
+      result.user.id,
+      null,
+      { email: result.user.email, name: result.user.name },
+      req.ip,
+      req.headers["user-agent"]
+    );
 
     res.status(201).json(result);
   } catch (error) {
@@ -1880,6 +1892,71 @@ router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: 
   } catch (error) {
     console.error("Error generating report:", error);
     res.status(500).json({ error: "Failed to generate report" });
+  }
+});
+
+// ─── AUDIT LOGS API ────────────────────────────────────────────────────────
+// GET /api/admin/audit-logs - Fetch paginated, filterable system audit logs
+router.get("/audit-logs", requirePermission(PERMISSIONS.AUDIT_LOGS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { action, entity, actorId, search, page = '1', limit = '50' } = req.query;
+    
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 50;
+    const offsetNum = (pageNum - 1) * limitNum;
+
+    const conditions: any[] = [];
+    if (action) conditions.push(eq(systemAuditLogs.action, action as string));
+    if (entity) conditions.push(eq(systemAuditLogs.entity, entity as string));
+    if (actorId) conditions.push(eq(systemAuditLogs.actorId, actorId as string));
+    
+    if (search) {
+       conditions.push(
+         or(
+           ilike(systemAuditLogs.action, `%${search}%`),
+           ilike(systemAuditLogs.entity, `%${search}%`)
+         )
+       );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [totalLogsResult, logs] = await Promise.all([
+      db.select({ count: count() }).from(systemAuditLogs).where(whereClause),
+      db.select({
+        id: systemAuditLogs.id,
+        actorId: systemAuditLogs.actorId,
+        actorName: users.name,
+        actorEmail: users.email,
+        action: systemAuditLogs.action,
+        entity: systemAuditLogs.entity,
+        entityId: systemAuditLogs.entityId,
+        oldValue: systemAuditLogs.oldValue,
+        newValue: systemAuditLogs.newValue,
+        ipAddress: systemAuditLogs.ipAddress,
+        userAgent: systemAuditLogs.userAgent,
+        createdAt: systemAuditLogs.createdAt,
+      })
+      .from(systemAuditLogs)
+      .leftJoin(users, eq(users.id, systemAuditLogs.actorId))
+      .where(whereClause)
+      .orderBy(desc(systemAuditLogs.createdAt))
+      .limit(limitNum)
+      .offset(offsetNum)
+    ]);
+
+    res.json({
+      data: logs,
+      meta: {
+        total: totalLogsResult[0].count,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(totalLogsResult[0].count / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
   }
 });
 

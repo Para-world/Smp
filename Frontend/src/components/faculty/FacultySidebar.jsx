@@ -66,7 +66,7 @@ export default function FacultySidebar({ collapsed, setCollapsed, mobileOpen, se
 
       {/* Navigation */}
       <TooltipProvider delayDuration={150}>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <nav data-lenis-prevent="true" className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
           {navGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {group.title && (!collapsed || isMobile) && (

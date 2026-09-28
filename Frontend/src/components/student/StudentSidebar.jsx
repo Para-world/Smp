@@ -61,7 +61,7 @@ export default function StudentSidebar({ collapsed, setCollapsed, mobileOpen, se
 
       {/* Navigation */}
       <TooltipProvider delayDuration={150}>
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+        <nav data-lenis-prevent="true" className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
           {navItems.map((item) => {
             const linkContent = (
               <NavLink

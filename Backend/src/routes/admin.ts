@@ -276,7 +276,7 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
       return { user: newUser, profile: newProfile };
     });
     await logAudit(
-      req.user!.id,
+      req.user!.userId,
       "CREATE",
       "STUDENT",
       result.user.id,

@@ -30,6 +30,12 @@ const navGroups = [
     ]
   },
   {
+    title: 'Reports',
+    items: [
+      { label: 'Reports & Analytics', icon: FileText, path: '/admin/reports' },
+    ]
+  },
+  {
     title: 'People',
     items: [
       { label: 'Students', icon: Users, path: '/admin/students' },
@@ -53,12 +59,6 @@ const navGroups = [
     items: [
       { label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
       { label: 'Notifications', icon: Bell, path: '/admin/notifications' },
-    ]
-  },
-  {
-    title: 'Reports',
-    items: [
-      { label: 'Reports & Analytics', icon: FileText, path: '/admin/reports' },
     ]
   },
   {
@@ -93,7 +93,7 @@ export default function AdminSidebar({ collapsed, setCollapsed, mobileOpen, setM
 
       {/* Navigation */}
       <TooltipProvider delayDuration={150}>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
           {navGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {group.title && (!collapsed || isMobile) && (

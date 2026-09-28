@@ -48,6 +48,7 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements'
 import AdminNotifications from './pages/admin/AdminNotifications'
 import AdminReports from './pages/admin/AdminReports'
 import AdminAuditLogs from './pages/admin/AdminAuditLogs'
+import AdminSettings from './pages/admin/AdminSettings'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
@@ -561,6 +562,15 @@ function AppContent() {
           element={
             <AdminRoute>
               <AdminAuditLogs />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminRoute>
+              <AdminSettings />
             </AdminRoute>
           }
         />

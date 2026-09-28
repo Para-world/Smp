@@ -16,7 +16,8 @@ import {
   announcements,
   notifications,
   submissions,
-  systemAuditLogs
+  systemAuditLogs,
+  systemSettings
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -1957,6 +1958,81 @@ router.get("/audit-logs", requirePermission(PERMISSIONS.AUDIT_LOGS_READ), async 
   } catch (error) {
     console.error("Error fetching audit logs:", error);
     res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+// ─── SETTINGS API ──────────────────────────────────────────────────────────
+// GET /api/admin/settings - Fetch all system settings
+router.get("/settings", requirePermission(PERMISSIONS.SETTINGS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const settingsRows = await db.select().from(systemSettings);
+    
+    // Convert array of rows into a key-value object
+    const settingsMap = settingsRows.reduce((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    res.json(settingsMap);
+  } catch (error) {
+    console.error("Error fetching settings:", error);
+    res.status(500).json({ error: "Failed to fetch system settings" });
+  }
+});
+
+// POST /api/admin/settings - Update system settings
+router.post("/settings", requirePermission(PERMISSIONS.SETTINGS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { settings } = req.body;
+    
+    if (!settings || typeof settings !== 'object') {
+      res.status(400).json({ error: "Invalid settings format" });
+      return;
+    }
+
+    const updatedKeys: string[] = [];
+
+    // Perform updates in a transaction
+    await db.transaction(async (tx) => {
+      for (const [key, value] of Object.entries(settings)) {
+        
+        // Only insert/update if value is defined
+        if (value !== undefined) {
+          // Check if key exists
+          const existing = await tx.select().from(systemSettings).where(eq(systemSettings.key, key));
+          
+          let oldValue = null;
+          if (existing.length > 0) {
+            oldValue = existing[0].value;
+            await tx.update(systemSettings)
+              .set({ value, updatedBy: req.user!.userId, updatedAt: new Date() })
+              .where(eq(systemSettings.key, key));
+          } else {
+            await tx.insert(systemSettings)
+              .values({ key, value, updatedBy: req.user!.userId });
+          }
+          
+          updatedKeys.push(key);
+          
+          // Log each individual setting change
+          await logAudit(
+            req.user!.userId,
+            "UPDATE",
+            "SYSTEM_SETTING",
+            key,
+            oldValue,
+            value,
+            req.ip,
+            req.headers["user-agent"]
+          );
+        }
+      }
+    });
+
+    res.json({ message: "Settings updated successfully", updatedKeys });
+  } catch (error) {
+    console.error("Error updating settings:", error);
+    res.status(500).json({ error: "Failed to update system settings" });
   }
 });
 

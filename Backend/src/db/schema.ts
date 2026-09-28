@@ -509,6 +509,13 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const systemSettings = pgTable("system_settings", {
+  key: varchar("key", { length: 255 }).primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const usersRelations = relations(users, ({ one, many }) => ({

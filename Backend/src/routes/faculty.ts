@@ -12,6 +12,7 @@ import {
   classSchedules,
   announcements,
   notifications,
+  studentResults,
 } from "../db/schema.js";
 import { eq, count, and, desc, sql, gte, inArray, or } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
@@ -960,6 +961,124 @@ router.delete("/announcements/:id", requireAuth, requireRole("faculty"), async (
   } catch (error) {
     console.error("Error deleting faculty announcement:", error);
     res.status(500).json({ error: "Failed to delete announcement" });
+  }
+});
+
+/**
+ * GET /api/faculty/courses/:courseId/results
+ * Get students and their results for a course
+ */
+router.get("/courses/:courseId/results", requirePermission(PERMISSIONS.RESULTS_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const facultyId = req.user!.userId;
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    // Get all enrolled students
+    const enrolledStudents = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    })
+    .from(enrollments)
+    .innerJoin(users, eq(users.id, enrollments.studentId))
+    .where(eq(enrollments.courseId, courseId));
+
+    // Get existing results for the course
+    const existingResultsList = await db.select()
+      .from(studentResults)
+      .where(eq(studentResults.courseId, courseId));
+
+    const resultsMap = new Map();
+    existingResultsList.forEach(r => resultsMap.set(r.studentId, r));
+
+    // Combine
+    const finalData = enrolledStudents.map(student => ({
+      student,
+      result: resultsMap.get(student.id) || null
+    }));
+
+    res.json(finalData);
+  } catch (error) {
+    console.error("Error fetching results:", error);
+    res.status(500).json({ error: "Failed to load results" });
+  }
+});
+
+/**
+ * PUT /api/faculty/courses/:courseId/results
+ * Upsert results for a course (Draft or Submit)
+ */
+router.put("/courses/:courseId/results", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const facultyId = req.user!.userId;
+    const { resultsData, action } = req.body; // action: 'save_draft' | 'submit_review'
+
+    if (!Array.isArray(resultsData)) {
+      res.status(400).json({ error: "Invalid data format" });
+      return;
+    }
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    // Process each result
+    // Note: status updates to PENDING_REVIEW if action is submit_review
+    const targetStatus = action === 'submit_review' ? 'PENDING_REVIEW' : 'DRAFT';
+
+    for (const data of resultsData) {
+      const { studentId, internalMarks, externalMarks, practicalMarks, totalMarks, grade, gradePoint } = data;
+
+      const [existing] = await db.select().from(studentResults)
+        .where(and(eq(studentResults.courseId, courseId), eq(studentResults.studentId, studentId)));
+
+      if (existing) {
+        // Check if we have permission to edit (cannot edit if PUBLISHED unless special permission, but faculty generally shouldn't)
+        if (existing.status === 'PUBLISHED') {
+          continue; // Skip published results
+        }
+
+        await db.update(studentResults).set({
+          internalMarks: internalMarks !== undefined ? parseInt(internalMarks) : null,
+          externalMarks: externalMarks !== undefined ? parseInt(externalMarks) : null,
+          practicalMarks: practicalMarks !== undefined ? parseInt(practicalMarks) : null,
+          totalMarks: totalMarks !== undefined ? parseInt(totalMarks) : null,
+          grade: grade || null,
+          gradePoint: gradePoint !== undefined ? parseInt(gradePoint) : null,
+          status: targetStatus,
+          updatedAt: new Date()
+        }).where(eq(studentResults.id, existing.id));
+      } else {
+        await db.insert(studentResults).values({
+          studentId,
+          courseId,
+          semesterId: course.semesterId,
+          internalMarks: internalMarks !== undefined ? parseInt(internalMarks) : null,
+          externalMarks: externalMarks !== undefined ? parseInt(externalMarks) : null,
+          practicalMarks: practicalMarks !== undefined ? parseInt(practicalMarks) : null,
+          totalMarks: totalMarks !== undefined ? parseInt(totalMarks) : null,
+          grade: grade || null,
+          gradePoint: gradePoint !== undefined ? parseInt(gradePoint) : null,
+          status: targetStatus,
+        });
+      }
+    }
+
+    res.json({ message: "Results saved successfully", status: targetStatus });
+  } catch (error) {
+    console.error("Error saving results:", error);
+    res.status(500).json({ error: "Failed to save results" });
   }
 });
 

@@ -265,5 +265,27 @@ export const deleteFacultyAnnouncement = async (id) => {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to delete announcement');
   }
+};
+
+export const fetchCourseResults = async (courseId) => {
+  const response = await fetch(`${API_URL}/faculty/courses/${courseId}/results`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch course results');
+  }
+  return response.json();
+};
+
+export const saveCourseResults = async (courseId, resultsData, action = 'save_draft') => {
+  const response = await fetch(`${API_URL}/faculty/courses/${courseId}/results`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ resultsData, action }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to save results');
+  }
   return response.json();
 };

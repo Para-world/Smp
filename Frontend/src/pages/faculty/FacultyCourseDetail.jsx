@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, ClipboardCheck, Calendar, BookOpen, Bell, FileSignature, BarChart } from 'lucide-react';
 import { toast } from 'sonner';
 import FacultyCourseStudents from './FacultyCourseStudents';
+import FacultyCourseResults from './FacultyCourseResults';
 
 export default function FacultyCourseDetail() {
   const { courseId } = useParams();
@@ -128,10 +129,7 @@ export default function FacultyCourseDetail() {
           </TabsContent>
 
           <TabsContent value="results" className="m-0">
-            <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center py-12 text-slate-500">
-              <BarChart size={48} className="mb-4 opacity-20" />
-              <p>Student results and grading analytics will be here.</p>
-            </div>
+            <FacultyCourseResults courseId={courseId} />
           </TabsContent>
 
           <TabsContent value="timetable" className="m-0">

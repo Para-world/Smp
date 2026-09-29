@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+
 
 export default function GlobalSearch() {
   const [query, setQuery] = useState('');
@@ -26,8 +26,15 @@ export default function GlobalSearch() {
       if (query.trim().length >= 2) {
         setIsLoading(true);
         try {
-          const res = await api.get(`/api/admin/search?q=${encodeURIComponent(query)}`);
-          setResults(res.data.results || []);
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+          const token = localStorage.getItem('edusphere_token');
+          const response = await fetch(`${API_URL}/admin/search?q=${encodeURIComponent(query)}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const data = await response.json();
+          setResults(data.results || []);
           setIsOpen(true);
         } catch (err) {
           console.error("Global search error", err);

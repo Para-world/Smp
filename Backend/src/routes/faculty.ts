@@ -112,6 +112,32 @@ router.get("/courses", requirePermission(PERMISSIONS.COURSES_READ), async (req: 
 });
 
 /**
+ * GET /api/faculty/courses/:courseId
+ * Get specific course details assigned to the faculty
+ */
+router.get("/courses/:courseId", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const facultyId = req.user!.userId;
+    const courseId = req.params.courseId as string;
+
+    const [course] = await db
+      .select()
+      .from(courses)
+      .where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+
+    if (!course) {
+      res.status(404).json({ error: "Course not found or access denied" });
+      return;
+    }
+
+    res.json(course);
+  } catch (error) {
+    console.error("Error fetching faculty course:", error);
+    res.status(500).json({ error: "Failed to load course details" });
+  }
+});
+
+/**
  * GET /api/faculty/courses/:courseId/attendance-roster
  * Get students enrolled in a specific course for marking attendance
  */

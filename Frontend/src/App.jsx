@@ -53,6 +53,8 @@ import AdminSemesters from './pages/admin/AdminSemesters'
 import AdminDepartments from './pages/admin/AdminDepartments'
 import FacultyAttendanceMarking from './pages/faculty/FacultyAttendanceMarking'
 import FacultyDashboard from './pages/faculty/FacultyDashboard'
+import FacultyCourses from './pages/faculty/FacultyCourses'
+import FacultyCourseDetail from './pages/faculty/FacultyCourseDetail'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
 import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
 import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
@@ -599,6 +601,22 @@ function AppContent() {
           element={
             <FacultyRoute>
               <FacultyDashboard />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/courses"
+          element={
+            <FacultyRoute>
+              <FacultyCourses />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/courses/:courseId"
+          element={
+            <FacultyRoute>
+              <FacultyCourseDetail />
             </FacultyRoute>
           }
         />

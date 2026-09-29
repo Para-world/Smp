@@ -176,8 +176,8 @@ router.get("/students", requirePermission(PERMISSIONS.STUDENTS_READ), async (req
         email: users.email,
         isActive: users.isActive,
         avatarUrl: users.avatarUrl,
-        program: studentProfiles.program,
-        semester: studentProfiles.semester,
+        programId: studentProfiles.programId,
+        semesterId: studentProfiles.semesterId,
         status: studentProfiles.status,
         enrollmentDate: studentProfiles.enrollmentDate,
       })
@@ -268,9 +268,9 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
         gender: gender || null,
         address: address || null,
-        program: program || null,
-        department: department || null,
-        semester: semester ? parseInt(semester) : null,
+        programId: program || null,
+        departmentId: department || null,
+        semesterId: semester || null,
         academicYear: academicYear || null,
         status: status === "inactive" ? "inactive" : "active",
         enrollmentDate: new Date().toISOString(),
@@ -335,9 +335,9 @@ router.post("/students/bulk-import", requirePermission(PERMISSIONS.STUDENTS_CREA
 
           await tx.insert(studentProfiles).values({
             userId: newUser.id,
-            program: row.program || null,
-            semester: row.semester ? parseInt(row.semester) : null,
-            department: row.department || null,
+            programId: row.program || null,
+            semesterId: row.semester || null,
+            departmentId: row.department || null,
             academicYear: row.academicYear || null,
             status: "active",
             enrollmentDate: new Date().toISOString(),
@@ -1477,7 +1477,7 @@ router.get("/announcements", requirePermission(PERMISSIONS.COURSES_READ), async 
         category: announcements.category,
         priority: announcements.priority,
         audience: announcements.audience,
-        program: announcements.program,
+        programId: announcements.program,
         semesterId: announcements.semesterId,
         courseId: announcements.courseId,
         attachments: announcements.attachments,
@@ -1609,7 +1609,7 @@ router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), asyn
       const studs = await db.select({ id: users.id, email: users.email, name: users.name })
         .from(studentProfiles)
         .innerJoin(users, eq(users.id, studentProfiles.userId))
-        .where(eq(studentProfiles.program, program));
+        .where(eq(studentProfiles.programId, program));
       targetUsers = studs;
     } else if (audience === 'SPECIFIC_SEMESTER' && semesterId) {
        const studs = await db.select({ id: users.id, email: users.email, name: users.name })
@@ -1697,9 +1697,9 @@ router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: 
     // Base conditions
     const buildStudentConditions = () => {
       const conditions: any[] = [];
-      if (program) conditions.push(eq(studentProfiles.program, program as string));
-      if (department) conditions.push(eq(studentProfiles.department, department as string));
-      if (semester) conditions.push(eq(studentProfiles.semester, parseInt(semester as string, 10)));
+      if (program) conditions.push(eq(studentProfiles.programId, program as string));
+      if (department) conditions.push(eq(studentProfiles.departmentId, department as string));
+      if (semester) conditions.push(eq(studentProfiles.semesterId, semester as string));
       if (academicYear) conditions.push(eq(studentProfiles.academicYear, academicYear as string));
       return conditions;
     };
@@ -1711,8 +1711,8 @@ router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: 
         name: users.name,
         email: users.email,
         isActive: users.isActive,
-        program: studentProfiles.program,
-        semester: studentProfiles.semester,
+        programId: studentProfiles.programId,
+        semesterId: studentProfiles.semesterId,
         enrollmentDate: studentProfiles.enrollmentDate
       })
       .from(users)
@@ -1729,18 +1729,18 @@ router.get("/reports", requirePermission(PERMISSIONS.REPORTS_READ), async (req: 
         resultData = { active, inactive, total: students.length, details: students };
       } else if (type === "by_semester") {
         const bySem = students.reduce((acc: any, s) => {
-          const sem = s.semester || 'Unknown';
+          const sem = s.semesterId || 'Unknown';
           acc[sem] = (acc[sem] || 0) + 1;
           return acc;
         }, {});
-        resultData = Object.keys(bySem).map(k => ({ semester: k, count: bySem[k] }));
+        resultData = Object.keys(bySem).map(k => ({ semesterId: k, count: bySem[k] }));
       } else if (type === "by_program") {
         const byProg = students.reduce((acc: any, s) => {
-          const prog = s.program || 'Unknown';
+          const prog = s.programId || 'Unknown';
           acc[prog] = (acc[prog] || 0) + 1;
           return acc;
         }, {});
-        resultData = Object.keys(byProg).map(k => ({ program: k, count: byProg[k] }));
+        resultData = Object.keys(byProg).map(k => ({ programId: k, count: byProg[k] }));
       }
     } else if (category === "attendance") {
       // Fetch attendance

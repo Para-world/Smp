@@ -978,9 +978,9 @@ router.get(
           city: profile.city,
           state: profile.state,
           postalCode: profile.postalCode,
-          program: profile.program,
-          department: profile.department,
-          semester: profile.semester ?? (activeSemester?.name || null),
+          program: profile.programId,
+          department: profile.departmentId,
+          semester: profile.semesterId ?? (activeSemester?.name || null),
           academicYear:
             profile.academicYear ??
             (activeSemester
@@ -1864,8 +1864,8 @@ router.get(
       const profile = await db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId));
       const enrollmentsList = await db.select({ courseId: enrollments.courseId }).from(enrollments).where(eq(enrollments.studentId, userId));
       
-      const studentProgram = profile[0]?.program;
-      const studentSemester = profile[0]?.semester; // Wait, schema uses `semesterId` for announcements, but studentProfiles might have integer `semester` or string `semester`?
+      const studentProgram = profile[0]?.programId;
+      const studentSemester = profile[0]?.semesterId; // Wait, schema uses `semesterId` for announcements, but studentProfiles might have integer `semester` or string `semester`?
       // Actually schema says studentProfiles has integer semester, but also maybe not a semesterId link. I'll just check courseIds and ALL and PROGRAM.
       const courseIds = enrollmentsList.map(e => e.courseId);
 
@@ -1973,7 +1973,7 @@ router.get(
         email: user.email,
         emailVerified: user.emailVerified,
         studentId: `BCA${new Date(user.createdAt).getFullYear()}${user.id.substring(0, 4).toUpperCase()}`,
-        program: profile?.program || "Bachelor of Computer Applications",
+        program: profile?.programId || "Bachelor of Computer Applications",
         semester: activeSemester?.name || "Semester 1",
         status: user.isActive ? "Active" : "Inactive",
       };

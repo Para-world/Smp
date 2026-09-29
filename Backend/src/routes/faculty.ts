@@ -13,7 +13,7 @@ import {
   announcements,
   notifications,
 } from "../db/schema.js";
-import { eq, count, and, desc } from "drizzle-orm";
+import { eq, count, and, desc, sql, gte, inArray, or } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
 import { sendNotificationEmail } from "../utils/mailer.js";
@@ -34,12 +34,49 @@ router.get("/dashboard", requirePermission(PERMISSIONS.COURSES_READ), async (req
     // 1. My Courses
     const [myCoursesRes] = await db.select({ count: count() }).from(courses).where(eq(courses.facultyId, facultyId));
     
-    // 2. Total Students across my courses
-    // TODO: Join enrollments with courses where courses.facultyId = facultyId
+    // 2. Total distinct Students across my courses
+    const [studentsRes] = await db.select({ 
+      count: count(sql`DISTINCT ${enrollments.studentId}`) 
+    })
+    .from(enrollments)
+    .innerJoin(courses, eq(enrollments.courseId, courses.id))
+    .where(eq(courses.facultyId, facultyId));
+
+    // 3. Today's Classes
+    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const today = days[new Date().getDay()];
+    const [todaysClassesRes] = await db.select({ count: count() })
+      .from(classSchedules)
+      .innerJoin(courses, eq(classSchedules.courseId, courses.id))
+      .where(and(eq(courses.facultyId, facultyId), eq(classSchedules.dayOfWeek, today)));
+
+    // 4. Pending Grading (submissions with status 'submitted')
+    const [pendingGradingRes] = await db.select({ count: count() })
+      .from(submissions)
+      .innerJoin(assignments, eq(submissions.assignmentId, assignments.id))
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(and(eq(courses.facultyId, facultyId), eq(submissions.status, 'submitted')));
+
+    // 5. Upcoming Exams
+    const [upcomingExamsRes] = await db.select({ count: count() })
+      .from(exams)
+      .innerJoin(courses, eq(exams.courseId, courses.id))
+      .where(and(eq(courses.facultyId, facultyId), gte(exams.date, new Date())));
+
+    // 6. Recent Announcements
+    const recentAnnouncements = await db.select()
+      .from(announcements)
+      .where(or(eq(announcements.audience, "ALL"), eq(announcements.audience, "FACULTY")))
+      .orderBy(desc(announcements.createdAt))
+      .limit(5);
     
     res.json({
       courses: myCoursesRes.count,
-      students: 0, // Placeholder
+      students: Number(studentsRes.count),
+      todaysClasses: todaysClassesRes.count,
+      pendingGrading: pendingGradingRes.count,
+      upcomingExams: upcomingExamsRes.count,
+      recentAnnouncements
     });
 
   } catch (error) {

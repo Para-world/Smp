@@ -55,6 +55,18 @@ export const createAdminStudent = async (studentData) => {
   return response.json();
 };
 
+export const deleteAdminStudent = async (studentId) => {
+  const response = await fetch(`${API_URL}/admin/students/${studentId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete student');
+  }
+  return response.json();
+};
+
 export const fetchAdminInstructors = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
   const response = await fetch(`${API_URL}/admin/instructors?${query}`, {
@@ -97,6 +109,18 @@ export const fetchAdminCourseDetails = async (courseId) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || 'Failed to fetch course details');
+  }
+  return response.json();
+};
+
+export const deleteAdminCourse = async (courseId) => {
+  const response = await fetch(`${API_URL}/courses/${courseId}`, { // courses route is separate from admin, but uses requireRole('admin')
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete course');
   }
   return response.json();
 };

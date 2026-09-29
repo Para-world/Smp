@@ -5,10 +5,12 @@ import {
   Search, Filter, Plus, UserX, Eye, Edit2, 
   MoreVertical, ChevronLeft, ChevronRight, Upload
 } from 'lucide-react';
-import { fetchAdminStudents } from '../../services/adminApi';
+import { fetchAdminStudents, deleteAdminStudent } from '../../services/adminApi';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { LoadingState, ErrorState, EmptyState } from '../../components/ui/states';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { FilterSheet } from '../../components/ui/FilterSheet';
 
 export default function AdminStudents() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -19,6 +21,10 @@ export default function AdminStudents() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [error, setError] = useState(null);
+
+  // Deletion state
+  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadStudents = async (page = 1) => {
     setLoading(true);
@@ -46,6 +52,20 @@ export default function AdminStudents() {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       loadStudents(newPage);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!studentToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteAdminStudent(studentToDelete.id);
+      loadStudents(pagination.page); // Reload current page
+    } catch (err) {
+      alert(err.message || "Failed to delete student");
+    } finally {
+      setIsDeleting(false);
+      setStudentToDelete(null);
     }
   };
 
@@ -82,7 +102,7 @@ export default function AdminStudents() {
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
               </div>
-              <div className="relative">
+              <div className="relative hidden sm:block">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -94,6 +114,24 @@ export default function AdminStudents() {
                 </select>
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               </div>
+              
+              <FilterSheet badgeCount={statusFilter ? 1 : 0}>
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">Status</label>
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full appearance-none pl-10 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    >
+                      <option value="">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  </div>
+                </div>
+              </FilterSheet>
             </div>
             
             <div className="flex items-center gap-3">
@@ -203,7 +241,8 @@ export default function AdminStudents() {
                             </button>
                             <button 
                               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                              aria-label={student.isActive ? `Deactivate ${student.name}` : `Activate ${student.name}`}
+                              aria-label={`Deactivate ${student.name}`}
+                              onClick={() => setStudentToDelete(student)}
                             >
                               <UserX size={18} />
                             </button>
@@ -287,7 +326,8 @@ export default function AdminStudents() {
                     </button>
                     <button 
                       className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                      aria-label={student.isActive ? `Deactivate ${student.name}` : `Activate ${student.name}`}
+                      aria-label={`Deactivate ${student.name}`}
+                      onClick={() => setStudentToDelete(student)}
                     >
                       <UserX size={18} />
                     </button>
@@ -328,6 +368,16 @@ export default function AdminStudents() {
           )}
         </main>
       </div>
+
+      <ConfirmDialog 
+        isOpen={!!studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Deactivate Student"
+        description={`Are you sure you want to deactivate ${studentToDelete?.name}? They will no longer be able to log in or access the system.`}
+        confirmText="Deactivate"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
+import { Toaster } from 'sonner'
 
 import { AuthProvider, useAuth } from './context/AuthContext'
 import CustomCursor from './components/CustomCursor'
@@ -223,6 +224,7 @@ function AppContent() {
   return (
     <div className="bg-slate-50 dark:bg-[#050811] font-body-md text-body-md text-slate-800 dark:text-slate-300 antialiased transition-colors duration-300 min-h-screen">
       <CustomCursor />
+      <Toaster position="top-right" richColors />
       <CommandPalette />
       <Routes>
         <Route path="/" element={<LandingPage />} />

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   RefreshCw, AlertTriangle, Users, UserCheck, BookOpen, 
-  ClipboardCheck, Award, FileText, Calendar
+  ClipboardCheck, Award, FileText, Calendar, Bell, ChevronRight, Activity, Clock
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -159,7 +159,68 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
+              {/* Critical Alerts - Priority 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-sm"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-xl text-red-600 dark:text-red-400">
+                    <Bell size={20} />
+                  </div>
+                  <h3 className="text-lg font-bold text-red-900 dark:text-red-400">Critical Alerts</h3>
+                </div>
+                <div className="space-y-3 pl-14">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-red-800 dark:text-red-300">System backup failed at 02:00 AM. Requires immediate attention.</span>
+                    <button className="text-red-600 dark:text-red-400 font-semibold hover:underline">Review logs</button>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-red-800 dark:text-red-300">5 faculty members have pending grading past the 48-hour deadline.</span>
+                    <button className="text-red-600 dark:text-red-400 font-semibold hover:underline">View details</button>
+                  </div>
+                </div>
+              </motion.div>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Recent Activity - Priority 2 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-white dark:bg-[#0B1120] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm lg:col-span-1 flex flex-col"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Activity size={18} className="text-blue-500" />
+                      Today's Activity
+                    </h3>
+                    <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</button>
+                  </div>
+                  <div className="space-y-6 flex-1">
+                    {[
+                      { title: "New student enrolled", time: "10 mins ago", icon: UserCheck, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+                      { title: "CS101 Results Published", time: "1 hour ago", icon: Award, color: "text-purple-500", bg: "bg-purple-50 dark:bg-purple-900/20" },
+                      { title: "System Maintenance Scheduled", time: "3 hours ago", icon: AlertTriangle, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
+                      { title: "New course 'Data Structures' added", time: "5 hours ago", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20" }
+                    ].map((activity, i) => (
+                      <div key={i} className="flex gap-4">
+                        <div className={`p-2 rounded-xl h-fit shrink-0 ${activity.bg} ${activity.color}`}>
+                          <activity.icon size={16} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white mb-0.5">{activity.title}</p>
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <Clock size={12} /> {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
                 {/* Academic Highlights */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}

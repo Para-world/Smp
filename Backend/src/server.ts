@@ -2,8 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
+import { requestLogger } from "./middleware/logger.js";
 
 // Route imports
 import authRoutes from "./routes/auth.js";
@@ -21,6 +23,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const isProduction = process.env.NODE_ENV === "production";
+
+// ─── MIDDLEWARE ──────────────────────────────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Required for serving static uploads cross-origin if needed
+}));
+app.use(requestLogger);
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 

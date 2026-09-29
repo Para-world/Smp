@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -19,13 +20,37 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3000", 10);
+const isProduction = process.env.NODE_ENV === "production";
 
-// ─── Middleware ──────────────────────────────────────────────────────────────
+// ─── CORS ────────────────────────────────────────────────────────────────────
+
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((u) => u.trim())
+  : ["http://localhost:5173"];
 
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., server-to-server, mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
+
+// ─── Global Rate Limiter ─────────────────────────────────────────────────────
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isProduction ? 300 : 5000, // strict in prod, relaxed in dev
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again later.", code: "RATE_LIMITED" },
+});
+
+app.use("/api", globalLimiter);
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -57,14 +82,19 @@ app.use("/api/faculty", facultyRoutes);
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
 app.use((_req, res) => {
-  res.status(404).json({ error: "Endpoint not found" });
+  res.status(404).json({ success: false, message: "Endpoint not found", code: "NOT_FOUND" });
 });
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: "Internal server error" });
+  // Never leak stack traces, SQL errors, or internal paths in production
+  if (!isProduction) {
+    console.error("Unhandled error:", err);
+  } else {
+    console.error("Unhandled error:", err.message);
+  }
+  res.status(500).json({ success: false, message: "Internal server error", code: "INTERNAL_ERROR" });
 });
 
 // ─── Start ───────────────────────────────────────────────────────────────────

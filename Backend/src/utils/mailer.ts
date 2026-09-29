@@ -1,5 +1,8 @@
 import nodemailer from "nodemailer";
 
+const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || "EduSphere";
+const MAIL_FROM_EMAIL = process.env.MAIL_FROM_EMAIL || process.env.SMTP_USER || "noreply@edusphere.com";
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || "587", 10),
@@ -13,7 +16,7 @@ const transporter = nodemailer.createTransport({
 export const sendOTP = async (to: string, code: string) => {
   try {
     await transporter.sendMail({
-      from: `"EduSphere Security" <${process.env.SMTP_USER}>`,
+      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
       to,
       subject: "Your Login Security Code",
       text: `Your security code is: ${code}\n\nThis code expires in 60 seconds.`,
@@ -43,7 +46,7 @@ export const sendOTP = async (to: string, code: string) => {
 export const sendNotificationEmail = async (to: string, subject: string, htmlContent: string) => {
   try {
     await transporter.sendMail({
-      from: `"EduSphere Notifications" <${process.env.SMTP_USER}>`,
+      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
       to,
       subject,
       html: `

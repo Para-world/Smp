@@ -104,7 +104,7 @@ router.put("/:id", requireAuth, requireRole("admin", "dean", "registrar"), async
     const { id } = req.params;
     const body = createCourseSchema.partial().parse(req.body);
 
-    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, id));
+    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, String(id)));
     if (!existingCourse) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -113,7 +113,7 @@ router.put("/:id", requireAuth, requireRole("admin", "dean", "registrar"), async
     const [updatedCourse] = await db
       .update(courses)
       .set(body)
-      .where(eq(courses.id, id))
+      .where(eq(courses.id, String(id)))
       .returning();
 
     // Dynamically import logAudit to avoid circular dependencies if any, but since logAudit is in utils it's fine.
@@ -138,7 +138,7 @@ router.delete("/:id", requireAuth, requireRole("admin", "dean", "registrar"), as
   try {
     const { id } = req.params;
 
-    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, id));
+    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, String(id)));
     if (!existingCourse) {
       res.status(404).json({ error: "Course not found" });
       return;
@@ -147,7 +147,7 @@ router.delete("/:id", requireAuth, requireRole("admin", "dean", "registrar"), as
     const [deletedCourse] = await db
       .update(courses)
       .set({ isActive: false })
-      .where(eq(courses.id, id))
+      .where(eq(courses.id, String(id)))
       .returning();
 
     const { logAudit } = await import("../utils/auditLogger.js");

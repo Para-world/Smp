@@ -466,22 +466,22 @@ router.delete("/students/:id", requirePermission(PERMISSIONS.STUDENTS_DELETE), a
     const { id } = req.params;
     
     // Check if student exists
-    const [existing] = await db.select().from(users).where(and(eq(users.id, id), eq(users.role, "student")));
+    const [existing] = await db.select().from(users).where(and(eq(users.id, String(id)), eq(users.role, "student")));
     if (!existing) {
       res.status(404).json({ error: "Student not found" });
       return;
     }
 
     await db.transaction(async (tx) => {
-      await tx.update(users).set({ isActive: false }).where(eq(users.id, id));
-      await tx.update(studentProfiles).set({ status: "inactive" }).where(eq(studentProfiles.userId, id));
+      await tx.update(users).set({ isActive: false }).where(eq(users.id, String(id)));
+      await tx.update(studentProfiles).set({ status: "inactive" }).where(eq(studentProfiles.userId, String(id)));
     });
 
     await logAudit(
       req.user!.userId,
       "DELETE",
       "STUDENT",
-      id,
+      String(id),
       { isActive: existing.isActive },
       { isActive: false },
       req.ip,

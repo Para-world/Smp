@@ -1415,7 +1415,7 @@ router.post(
 
       // Check for existing submission
       const [existingSubmission] = await db
-        .select({ id: submissions.id })
+        .select({ id: submissions.id, status: submissions.status })
         .from(submissions)
         .where(and(eq(submissions.studentId, userId), eq(submissions.assignmentId, assignmentId)))
         .limit(1);

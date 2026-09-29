@@ -32,9 +32,17 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g., server-to-server, mobile apps, Postman)
     if (!origin) return callback(null, true);
+    
+    // Allow dynamically configured origins
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+    
+    // Allow all Vercel deployments dynamically (very useful for previews)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
     return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,

@@ -25,7 +25,7 @@ import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm"
 import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
 import { PERMISSIONS, hasPermission } from "../utils/permissions.js";
-import { sendNotificationEmail } from "../utils/mailer.js";
+import { notify } from "../utils/notificationService.js";
 import { jsonToCsv } from "../utils/csv.js";
 import { logAudit } from "../utils/auditLogger.js";
 
@@ -1298,31 +1298,19 @@ router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async 
       const [student] = await db.select({ email: users.email }).from(users).where(eq(users.id, result.studentId));
       const [course] = await db.select({ title: courses.title, code: courses.code }).from(courses).where(eq(courses.id, result.courseId));
       if (student && course) {
-        setImmediate(async () => {
-          try {
-            await sendNotificationEmail(
-              student.email,
-              `Result Published: ${course.code}`,
-              `
-              <h2 style="color: #333; margin-bottom: 16px;">Result Published</h2>
-              <p style="color: #555;">Your result for the course <strong>${course.code} - ${course.title}</strong> has been published by the administration.</p>
-              <p style="color: #555; margin-top: 20px;">You can log in to your student portal to view your grades.</p>
-              `
-            );
-            
-            // Insert in-app notification
-            await db.insert(notifications).values({
-              userId: result.studentId,
-              title: `Result Published: ${course.code}`,
-              message: `Your result for the course ${course.code} has been published.`,
-              type: 'RESULT_PUBLISHED',
-              entityType: 'result',
-              entityId: result.id,
-              priority: 'IMPORTANT'
-            });
-          } catch (e) {
-             console.error(`Failed to send result email to ${student.email}`, e);
-          }
+        await notify.resultPublished({
+          recipientIds: [result.studentId],
+          title: `Result Published: ${course.code}`,
+          message: `Your result for the course ${course.code} has been published.`,
+          entityId: result.id,
+          priority: 'IMPORTANT',
+          emailSubject: `Result Published: ${course.code}`,
+          emailHtml: `
+            <h2 style="color: #333; margin-bottom: 16px;">Result Published</h2>
+            <p style="color: #555;">Your result for the course <strong>${course.code} - ${course.title}</strong> has been published by the administration.</p>
+            <p style="color: #555; margin-top: 20px;">You can log in to your student portal to view your grades.</p>
+          `,
+          recipientEmails: [student.email]
         });
       }
     }
@@ -1817,33 +1805,21 @@ router.post("/notifications", requirePermission(PERMISSIONS.SYSTEM_UPDATE), asyn
       return;
     }
 
-    // Insert notifications into DB
-    const insertData = targetUsers.map(user => ({
-      userId: user.id,
+    // Send notifications via centralized service
+    const t = (type || 'SYSTEM') as any;
+    
+    await notify.system({
+      recipientIds: targetUsers.map(u => u.id),
       title,
       message,
-      type: type || 'SYSTEM',
-      priority: priority || 'NORMAL',
-    }));
-
-    await db.insert(notifications).values(insertData);
-
-    // Send emails async if requested
-    if (sendEmail) {
-      // Async email sending without blocking the API response
-      setImmediate(async () => {
-        for (const user of targetUsers) {
-          try {
-            await sendNotificationEmail(user.email, title, `
-              <h2 style="color: #333; margin-bottom: 16px;">${title}</h2>
-              <p style="color: #555; white-space: pre-wrap;">${message}</p>
-            `);
-          } catch (e) {
-            console.error(`Failed to send email to ${user.email}`, e);
-          }
-        }
-      });
-    }
+      priority: (priority as any) || 'NORMAL',
+      emailSubject: sendEmail ? title : undefined,
+      emailHtml: sendEmail ? `
+        <h2 style="color: #333; margin-bottom: 16px;">${title}</h2>
+        <p style="color: #555; white-space: pre-wrap;">${message}</p>
+      ` : undefined,
+      recipientEmails: sendEmail ? targetUsers.map(u => u.email) : undefined,
+    });
 
     res.json({ success: true, count: targetUsers.length, message: `Notification sent to ${targetUsers.length} users.` });
   } catch (error) {

@@ -17,7 +17,7 @@ import {
 import { eq, count, and, desc, sql, gte, inArray, or } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
 import { PERMISSIONS } from "../utils/permissions.js";
-import { sendNotificationEmail } from "../utils/mailer.js";
+import { notify } from "../utils/notificationService.js";
 
 const router = Router();
 
@@ -379,29 +379,23 @@ router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), a
           .innerJoin(users, eq(users.id, enrollments.studentId))
           .where(eq(enrollments.courseId, courseId));
           
-        for (const student of enrolledStudents) {
-          // Send Email
-          await sendNotificationEmail(
-            student.email,
-            `New Assignment: ${title}`,
-            `
+        const recipientIds = enrolledStudents.map(s => s.id);
+        const recipientEmails = enrolledStudents.map(s => s.email);
+
+        await notify.assignmentCreated({
+          recipientIds,
+          title: `New Assignment: ${title}`,
+          message: `A new assignment has been posted for ${course.code}.`,
+          entityId: assignment.id,
+          priority: "NORMAL",
+          emailSubject: `New Assignment: ${title}`,
+          emailHtml: `
             <h2 style="color: #333; margin-bottom: 16px;">New Assignment Posted</h2>
             <p style="color: #555;">A new assignment <strong>${title}</strong> has been posted in ${course.code}.</p>
             <p style="color: #555;">Due Date: ${dueDate ? new Date(dueDate).toLocaleString() : 'No due date'}</p>
-            `
-          );
-
-          // Add in-app notification
-          await db.insert(notifications).values({
-            userId: student.id,
-            title: `New Assignment: ${title}`,
-            message: `A new assignment has been posted for ${course.code}.`,
-            type: 'ASSIGNMENT_CREATED',
-            entityType: 'assignment',
-            entityId: assignment.id,
-            priority: 'NORMAL'
-          });
-        }
+          `,
+          recipientEmails
+        });
       } catch (e) {
         console.error("Failed to send assignment notifications:", e);
       }

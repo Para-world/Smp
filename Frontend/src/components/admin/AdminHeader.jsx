@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Menu, User, Settings, LogOut } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
+import NotificationCenter from './NotificationCenter';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -51,6 +52,7 @@ export default function AdminHeader({ pageTitle = 'Dashboard', onMenuClick }) {
 
         {/* Right */}
         <div className="flex items-center gap-2 sm:gap-4">
+          <NotificationCenter />
           {/* User Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

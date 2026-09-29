@@ -205,6 +205,93 @@ router.get("/dashboard", requirePermission(PERMISSIONS.REPORTS_READ), async (req
 });
 
 /**
+ * GET /api/admin/dashboard/alerts
+ * Gets dynamic alerts for the admin notification center
+ */
+router.get("/dashboard/alerts", requirePermission(PERMISSIONS.SYSTEM_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const alerts: any[] = [];
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    // 1. New student registration
+    const [newStudents] = await db.select({ count: count() }).from(users).where(and(eq(users.role, "student"), gte(users.createdAt, sevenDaysAgo)));
+    if (newStudents.count > 0) {
+      alerts.push({
+        id: 'new_students',
+        type: 'info',
+        title: 'New Student Registrations',
+        message: `${newStudents.count} new students registered in the last 7 days.`,
+        createdAt: now.toISOString(),
+      });
+    }
+
+    // 2. Pending result review
+    const [pendingResults] = await db.select({ count: count() }).from(studentResults).where(sql`${studentResults.grade} IS NULL`);
+    if (pendingResults.count > 0) {
+      alerts.push({
+        id: 'pending_results',
+        type: 'warning',
+        title: 'Pending Result Review',
+        message: `${pendingResults.count} student results are awaiting final grading or review.`,
+        createdAt: now.toISOString(),
+      });
+    }
+
+    // 3. System errors
+    const [systemErrors] = await db.select({ count: count() }).from(systemAuditLogs).where(and(eq(systemAuditLogs.action, "ERROR"), gte(systemAuditLogs.createdAt, sevenDaysAgo)));
+    if (systemErrors.count > 0) {
+      alerts.push({
+        id: 'system_errors',
+        type: 'error',
+        title: 'System Errors Detected',
+        message: `${systemErrors.count} system errors occurred in the last 7 days.`,
+        createdAt: now.toISOString(),
+      });
+    }
+
+    // 4. Low attendance alerts
+    const absentCountQuery = await db.select({ 
+      studentId: attendance.studentId, 
+      absences: count() 
+    })
+    .from(attendance)
+    .where(eq(attendance.status, "absent"))
+    .groupBy(attendance.studentId);
+    
+    const lowAttendanceCount = absentCountQuery.filter(record => record.absences >= 5).length;
+    if (lowAttendanceCount > 0) {
+      alerts.push({
+        id: 'low_attendance',
+        type: 'warning',
+        title: 'Low Attendance Alerts',
+        message: `${lowAttendanceCount} students have critical low attendance (5+ absences).`,
+        createdAt: now.toISOString(),
+      });
+    }
+
+    // 5. Assignment grading pending (submissions that don't have a grade)
+    // For simplicity, we just check submissions with status submitted (not graded if such status exists)
+    // According to schema, submissionStatusEnum has 'submitted', 'graded', 'returned'
+    const [pendingGrading] = await db.select({ count: count() }).from(submissions).where(eq(submissions.status, "submitted"));
+    if (pendingGrading.count > 0) {
+      alerts.push({
+        id: 'pending_grading',
+        type: 'info',
+        title: 'Assignment Grading Pending',
+        message: `${pendingGrading.count} assignment submissions are pending grading.`,
+        createdAt: now.toISOString(),
+      });
+    }
+
+    res.json(alerts);
+  } catch (error) {
+    console.error("Error fetching dashboard alerts:", error);
+    res.status(500).json({ error: "Failed to fetch alerts" });
+  }
+});
+
+/**
  * GET /api/admin/students
  * List students with pagination, search, filter
  */

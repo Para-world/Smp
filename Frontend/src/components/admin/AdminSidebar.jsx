@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   Shield,
-  ChevronLeft
+  ChevronLeft,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import LOGO_SRC from '../../assets/logo.png';

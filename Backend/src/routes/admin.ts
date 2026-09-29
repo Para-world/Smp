@@ -23,7 +23,7 @@ import {
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
+import { requireAuth, AuthRequest, requirePermission, strictLimiter } from "../utils/middleware.js";
 import { PERMISSIONS, hasPermission } from "../utils/permissions.js";
 import { notify } from "../utils/notificationService.js";
 import { jsonToCsv } from "../utils/csv.js";
@@ -461,7 +461,7 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
  * POST /api/admin/students/bulk-import
  * Bulk import students
  */
-router.post("/students/bulk-import", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/students/bulk-import", requirePermission(PERMISSIONS.STUDENTS_CREATE), strictLimiter, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { students } = req.body;
     if (!students || !Array.isArray(students) || students.length === 0) {
@@ -789,12 +789,19 @@ router.post("/enrollments", requirePermission(PERMISSIONS.ENROLLMENTS_CREATE), a
       return;
     }
 
-    // Create enrollment
-    const [newEnrollment] = await db.insert(enrollments).values({
-      studentId,
-      courseId,
-      status: "enrolled",
-    }).returning();
+    // Create enrollment using a transaction for atomicity
+    const newEnrollment = await db.transaction(async (tx) => {
+      const [enr] = await tx.insert(enrollments).values({
+        studentId,
+        courseId,
+        status: "enrolled",
+      }).returning();
+      
+      // Update any relevant academic data or log audit here in the same transaction
+      // (e.g. updating student profile last activity or triggering DB triggers)
+
+      return enr;
+    });
 
     res.status(201).json({ message: "Student enrolled successfully", enrollment: newEnrollment });
   } catch (error) {
@@ -1289,22 +1296,26 @@ router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async 
        return;
     }
 
-    const [result] = await db.update(studentResults).set({
-      status,
-      updatedAt: new Date(),
-      publishedAt: status === 'PUBLISHED' ? new Date() : undefined
-    }).where(eq(studentResults.id, req.params.id as string)).returning();
-    
-    await db.insert(resultAuditLogs).values({
-      resultId: result.id,
-      changedBy: req.user!.userId,
-      changeType: "STATUS_CHANGE",
-      oldValue: { status: existing.status },
-      newValue: { status: result.status },
-      reason: req.body.reason || `Status changed to ${status}`,
+    const result = await db.transaction(async (tx) => {
+      const [res] = await tx.update(studentResults).set({
+        status,
+        updatedAt: new Date(),
+        publishedAt: status === 'PUBLISHED' ? new Date() : undefined
+      }).where(eq(studentResults.id, req.params.id as string)).returning();
+      
+      await tx.insert(resultAuditLogs).values({
+        resultId: res.id,
+        changedBy: req.user!.userId,
+        changeType: "STATUS_CHANGE",
+        oldValue: { status: existing.status },
+        newValue: { status: res.status },
+        reason: req.body.reason || `Status changed to ${status}`,
+      });
+
+      return res;
     });
 
-    // Send email notification if result just got published
+    // Send email notification if result just got published (kept outside transaction to avoid blocking DB if email fails or to prevent sending if TX fails)
     if (existing.status !== 'PUBLISHED' && status === 'PUBLISHED') {
       const [student] = await db.select({ email: users.email }).from(users).where(eq(users.id, result.studentId));
       const [course] = await db.select({ title: courses.title, code: courses.code }).from(courses).where(eq(courses.id, result.courseId));
@@ -1336,7 +1347,7 @@ router.put("/results/:id", requirePermission(PERMISSIONS.RESULTS_UPDATE), async 
  * POST /api/admin/results/bulk-import
  * Bulk import results
  */
-router.post("/results/bulk-import", requirePermission(PERMISSIONS.RESULTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+router.post("/results/bulk-import", requirePermission(PERMISSIONS.RESULTS_UPDATE), strictLimiter, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { results, semesterId, academicYear } = req.body;
     

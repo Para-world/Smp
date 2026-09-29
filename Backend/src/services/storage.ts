@@ -5,23 +5,37 @@ export interface StorageProvider {
 
 export class LocalStorageProvider implements StorageProvider {
   async uploadFile(file: Express.Multer.File, folder: string = 'uploads'): Promise<string> {
-    // In a real local storage, we would move the file from a temp path to the public folder
-    // For this abstraction, we assume multer has already saved it to the destination
-    // and we just return the URL path.
-    // If multer is using memory storage, we would write it to fs here.
     const path = require('path');
     const fs = require('fs');
 
-    const uploadsDir = path.join(process.cwd(), 'public', folder);
+    // Path traversal prevention: clean the folder name
+    const cleanFolder = path.basename(folder).replace(/[^a-zA-Z0-9_-]/g, '');
+    const uploadsDir = path.join(process.cwd(), 'public', cleanFolder);
+    
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const filename = file.fieldname + '-' + uniqueSuffix + ext;
+    
+    // Extension validation (don't trust client MIME alone)
+    const originalExt = path.extname(file.originalname).toLowerCase();
+    const safeExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.doc', '.docx'];
+    
+    if (!safeExts.includes(originalExt)) {
+      throw new Error(`File extension ${originalExt} is not allowed for security reasons.`);
+    }
+
+    // Generate safe filename
+    const safeOriginalName = path.basename(file.originalname, originalExt).replace(/[^a-zA-Z0-9_-]/g, '');
+    const filename = `${file.fieldname}-${safeOriginalName}-${uniqueSuffix}${originalExt}`;
     
     const filePath = path.join(uploadsDir, filename);
+
+    // Final path traversal check
+    if (!filePath.startsWith(uploadsDir)) {
+      throw new Error("Path traversal detected.");
+    }
 
     if (file.buffer) {
       fs.writeFileSync(filePath, file.buffer);
@@ -29,7 +43,7 @@ export class LocalStorageProvider implements StorageProvider {
       fs.renameSync(file.path, filePath);
     }
 
-    return `/${folder}/${filename}`;
+    return `/${cleanFolder}/${filename}`;
   }
 
   async deleteFile(fileUrl: string): Promise<boolean> {
@@ -37,9 +51,16 @@ export class LocalStorageProvider implements StorageProvider {
     const path = require('path');
 
     try {
-      const relativePath = fileUrl.replace(/^\//, ''); // remove leading slash
+      // Basic protection against directory traversal in deletion
+      const cleanPath = path.normalize(fileUrl).replace(/^(\.\.[\/\\])+/, '');
+      const relativePath = cleanPath.replace(/^\//, ''); // remove leading slash
       const filePath = path.join(process.cwd(), 'public', relativePath);
       
+      const publicDir = path.join(process.cwd(), 'public');
+      if (!filePath.startsWith(publicDir)) {
+         return false; // Prevent deleting outside public dir
+      }
+
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         return true;

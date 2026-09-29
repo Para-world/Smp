@@ -26,7 +26,7 @@ import {
   trustedDevices,
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray, or } from "drizzle-orm";
-import { AuthRequest, requireAuth, requireRole } from "../utils/middleware.js";
+import { AuthRequest, requireAuth, requireRole, strictLimiter } from "../utils/middleware.js";
 import { z } from "zod";
 
 // ─── Avatar upload config ────────────────────────────────────────────────────
@@ -1075,6 +1075,7 @@ router.post(
   "/profile/avatar",
   requireAuth,
   requireRole("student"),
+  strictLimiter,
   (req: AuthRequest, res: Response, next) => {
     avatarUpload.single("avatar")(req, res, (err) => {
       if (err) {

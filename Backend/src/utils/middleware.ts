@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from "express";
+import rateLimit from "express-rate-limit";
 import { verifyToken } from "./jwt.js";
 import { Permission, hasPermission } from "./permissions.js";
+
+// Specific limiters
+export const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Max 20 requests per window for sensitive ops
+  message: { error: "Too many attempts, please try again later." },
+});
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Max 10 attempts for login/auth endpoints
+  message: { error: "Too many authentication attempts, please try again later." },
+});
 
 export interface AuthRequest extends Request {
   user?: {

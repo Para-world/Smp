@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { hash, compare } from "../utils/crypto.js";
 import { signToken, verifyToken } from "../utils/jwt.js";
+import { authLimiter } from "../utils/middleware.js";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ const signinSchema = z.object({
 
 // ─── POST /api/auth/signup ───────────────────────────────────────────────────
 
-router.post("/signup", async (req: Request, res: Response): Promise<void> => {
+router.post("/signup", authLimiter, async (req: Request, res: Response): Promise<void> => {
   try {
     const body = signupSchema.parse(req.body);
 

@@ -30,6 +30,17 @@ export const fetchFacultyCourseById = async (courseId) => {
   return response.json();
 };
 
+export const fetchFacultyCourseStudents = async (courseId) => {
+  const response = await fetch(`${API_URL}/faculty/courses/${courseId}/students`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch course students');
+  }
+  return response.json();
+};
+
 export const fetchFacultyCourseRoster = async (courseId) => {
   const response = await fetch(`${API_URL}/faculty/courses/${courseId}/attendance-roster`, {
     headers: getAuthHeaders(),

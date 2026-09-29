@@ -138,6 +138,41 @@ router.get("/courses/:courseId", requirePermission(PERMISSIONS.COURSES_READ), as
 });
 
 /**
+ * GET /api/faculty/courses/:courseId/students
+ * Get students enrolled in a specific course with their overall status
+ */
+router.get("/courses/:courseId/students", requirePermission(PERMISSIONS.COURSES_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const facultyId = req.user!.userId;
+
+    // Verify course belongs to this faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied or course not found" });
+      return;
+    }
+
+    const roster = await db
+      .select({
+        studentId: users.id,
+        name: users.name,
+        email: users.email,
+        status: enrollments.status,
+        finalGrade: enrollments.finalGrade,
+      })
+      .from(enrollments)
+      .innerJoin(users, eq(enrollments.studentId, users.id))
+      .where(eq(enrollments.courseId, courseId));
+
+    res.json(roster);
+  } catch (error) {
+    console.error("Error fetching course students:", error);
+    res.status(500).json({ error: "Failed to load students" });
+  }
+});
+
+/**
  * GET /api/faculty/courses/:courseId/attendance-roster
  * Get students enrolled in a specific course for marking attendance
  */

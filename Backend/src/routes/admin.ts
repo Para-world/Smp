@@ -458,6 +458,44 @@ router.post("/students", requirePermission(PERMISSIONS.STUDENTS_CREATE), async (
 });
 
 /**
+ * DELETE /api/admin/students/:id
+ * Soft delete student
+ */
+router.delete("/students/:id", requirePermission(PERMISSIONS.STUDENTS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // Check if student exists
+    const [existing] = await db.select().from(users).where(and(eq(users.id, id), eq(users.role, "student")));
+    if (!existing) {
+      res.status(404).json({ error: "Student not found" });
+      return;
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ isActive: false }).where(eq(users.id, id));
+      await tx.update(studentProfiles).set({ status: "inactive" }).where(eq(studentProfiles.userId, id));
+    });
+
+    await logAudit(
+      req.user!.userId,
+      "DELETE",
+      "STUDENT",
+      id,
+      { isActive: existing.isActive },
+      { isActive: false },
+      req.ip,
+      req.headers["user-agent"]
+    );
+
+    res.json({ message: "Student archived successfully" });
+  } catch (error) {
+    console.error("Error archiving student:", error);
+    res.status(500).json({ error: "Failed to archive student" });
+  }
+});
+
+/**
  * POST /api/admin/students/bulk-import
  * Bulk import students
  */
@@ -818,7 +856,7 @@ router.delete("/enrollments/:id", requirePermission(PERMISSIONS.ENROLLMENTS_DELE
   try {
     const id = req.params.id as string;
 
-    const [deleted] = await db.delete(enrollments).where(eq(enrollments.id, id)).returning();
+    const [deleted] = await db.update(enrollments).set({ status: "dropped" }).where(eq(enrollments.id, id)).returning();
     if (!deleted) {
       res.status(404).json({ error: "Enrollment not found" });
       return;

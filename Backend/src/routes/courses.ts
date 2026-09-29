@@ -97,6 +97,68 @@ router.post("/", requireAuth, requireRole("admin", "dean", "registrar"), async (
     res.status(500).json({ error: "Internal server error" });
   }
 });
+// ─── PUT /api/courses/:id — Update course (admin/faculty) ─────────────────────
+
+router.put("/:id", requireAuth, requireRole("admin", "dean", "registrar"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const body = createCourseSchema.partial().parse(req.body);
+
+    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, id));
+    if (!existingCourse) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+
+    const [updatedCourse] = await db
+      .update(courses)
+      .set(body)
+      .where(eq(courses.id, id))
+      .returning();
+
+    // Dynamically import logAudit to avoid circular dependencies if any, but since logAudit is in utils it's fine.
+    // Let's import logAudit at the top of the file!
+    const { logAudit } = await import("../utils/auditLogger.js");
+    await logAudit(req.user!.userId, "UPDATE", "COURSE", updatedCourse.id, existingCourse, updatedCourse, req.ip, req.headers["user-agent"]);
+
+    res.json({ course: updatedCourse });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: "Validation failed", details: error.errors });
+      return;
+    }
+    console.error("Update course error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── DELETE /api/courses/:id — Soft delete course ───────────────────────────
+
+router.delete("/:id", requireAuth, requireRole("admin", "dean", "registrar"), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const [existingCourse] = await db.select().from(courses).where(eq(courses.id, id));
+    if (!existingCourse) {
+      res.status(404).json({ error: "Course not found" });
+      return;
+    }
+
+    const [deletedCourse] = await db
+      .update(courses)
+      .set({ isActive: false })
+      .where(eq(courses.id, id))
+      .returning();
+
+    const { logAudit } = await import("../utils/auditLogger.js");
+    await logAudit(req.user!.userId, "DELETE", "COURSE", deletedCourse.id, existingCourse, deletedCourse, req.ip, req.headers["user-agent"]);
+
+    res.json({ message: "Course deleted successfully" });
+  } catch (error) {
+    console.error("Delete course error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // ─── POST /api/courses/:id/enroll — Enroll student ──────────────────────────
 

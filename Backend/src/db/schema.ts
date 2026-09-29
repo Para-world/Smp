@@ -383,6 +383,7 @@ export const assignments = pgTable("assignments", {
   allowResubmission: boolean("allow_resubmission").notNull().default(false),
   maxAttempts: integer("max_attempts").notNull().default(1),
   isPublished: boolean("is_published").notNull().default(false),
+  isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   courseIdx: index("assign_course_idx").on(table.courseId),

@@ -27,6 +27,7 @@ import {
 } from "../db/schema.js";
 import { eq, and, desc, gte, lte, sql, count, avg, inArray, or } from "drizzle-orm";
 import { AuthRequest, requireAuth, requireRole, strictLimiter } from "../utils/middleware.js";
+import { logAudit } from "../utils/auditLogger.js";
 import { z } from "zod";
 
 // ─── Avatar upload config ────────────────────────────────────────────────────
@@ -1434,6 +1435,7 @@ router.post(
           .where(eq(submissions.id, existingSubmission.id))
           .returning();
           
+        await logAudit(userId, "RESUBMIT", "ASSIGNMENT", updatedSubmission.id, { status: existingSubmission.status }, { status: updatedSubmission.status }, req.ip, req.headers["user-agent"]);
         res.json({ message: "Assignment resubmitted successfully.", submission: updatedSubmission });
         return;
       } else {
@@ -1449,6 +1451,7 @@ router.post(
           })
           .returning();
           
+        await logAudit(userId, "SUBMIT", "ASSIGNMENT", newSubmission.id, null, { status }, req.ip, req.headers["user-agent"]);
         res.json({ message: "Assignment submitted successfully.", submission: newSubmission });
         return;
       }

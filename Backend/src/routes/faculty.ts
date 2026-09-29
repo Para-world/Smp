@@ -491,11 +491,7 @@ router.delete("/assignments/:assignmentId", requirePermission(PERMISSIONS.ASSIGN
       return;
     }
 
-    // Delete associated grades and submissions first to avoid foreign key constraints
-    await db.delete(grades).where(eq(grades.assignmentId, assignmentId));
-    await db.delete(submissions).where(eq(submissions.assignmentId, assignmentId));
-    
-    await db.delete(assignments).where(eq(assignments.id, assignmentId));
+    await db.update(assignments).set({ isDeleted: true }).where(eq(assignments.id, assignmentId));
 
     res.json({ message: "Assignment deleted successfully" });
   } catch (error) {
@@ -907,6 +903,10 @@ router.post("/announcements", requireAuth, requireRole("faculty"), async (req: A
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       authorId: facultyId,
     }).returning();
+
+    if (newAnn.status === 'PUBLISHED') {
+      await logAudit(facultyId, "PUBLISH", "ANNOUNCEMENT", newAnn.id, null, { title: newAnn.title }, req.ip, req.headers["user-agent"]);
+    }
 
     res.json(newAnn);
   } catch (error) {

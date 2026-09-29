@@ -16,6 +16,7 @@ import {
 } from "../db/schema.js";
 import { eq, count, and, desc, sql, gte, inArray, or } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
+import { PERMISSIONS } from "../utils/permissions.js";
 import { notify } from "../utils/notificationService.js";
 import { logAudit } from "../utils/auditLogger.js";
 

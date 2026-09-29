@@ -43,8 +43,7 @@ router.get("/dashboard", requirePermission(PERMISSIONS.COURSES_READ), async (req
     .where(eq(courses.facultyId, facultyId));
 
     // 3. Today's Classes
-    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    const today = days[new Date().getDay()];
+    const today = new Date().getDay(); // 0 (Sunday) to 6 (Saturday)
     const [todaysClassesRes] = await db.select({ count: count() })
       .from(classSchedules)
       .innerJoin(courses, eq(classSchedules.courseId, courses.id))
@@ -66,7 +65,7 @@ router.get("/dashboard", requirePermission(PERMISSIONS.COURSES_READ), async (req
     // 6. Recent Announcements
     const recentAnnouncements = await db.select()
       .from(announcements)
-      .where(or(eq(announcements.audience, "ALL"), eq(announcements.audience, "FACULTY")))
+      .where(eq(announcements.audience, "ALL"))
       .orderBy(desc(announcements.createdAt))
       .limit(5);
     

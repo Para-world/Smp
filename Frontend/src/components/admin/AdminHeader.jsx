@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Menu, User, Settings, LogOut } from 'lucide-react';
+import GlobalSearch from './GlobalSearch';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -41,6 +42,11 @@ export default function AdminHeader({ pageTitle = 'Dashboard', onMenuClick }) {
           <h1 className="font-display text-lg font-bold text-slate-900 dark:text-white sm:text-xl">
             {pageTitle}
           </h1>
+        </div>
+
+        {/* Center: Global Search */}
+        <div className="flex-1 flex justify-center px-4">
+          <GlobalSearch />
         </div>
 
         {/* Right */}

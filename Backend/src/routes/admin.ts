@@ -24,7 +24,7 @@ import {
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { requireAuth, AuthRequest, requirePermission } from "../utils/middleware.js";
-import { PERMISSIONS } from "../utils/permissions.js";
+import { PERMISSIONS, hasPermission } from "../utils/permissions.js";
 import { sendNotificationEmail } from "../utils/mailer.js";
 import { jsonToCsv } from "../utils/csv.js";
 import { logAudit } from "../utils/auditLogger.js";
@@ -32,7 +32,81 @@ import { logAudit } from "../utils/auditLogger.js";
 const router = Router();
 
 // Apply auth middleware to all admin routes
+// Apply auth middleware to all admin routes
 router.use(requireAuth);
+
+/**
+ * GET /api/admin/search
+ * Global search across permitted entities
+ */
+router.get("/search", async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const q = req.query.q as string;
+    if (!q || q.length < 2) {
+      res.json({ results: [] });
+      return;
+    }
+
+    const role = req.user!.role;
+    const results: any[] = [];
+    const searchPattern = `%${q}%`;
+
+    // 1. Search Students
+    if (hasPermission(role, PERMISSIONS.STUDENTS_READ)) {
+      const studentMatches = await db
+        .select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(and(eq(users.role, "student"), or(ilike(users.name, searchPattern), ilike(users.email, searchPattern))))
+        .limit(5);
+      studentMatches.forEach(s => results.push({ type: 'student', id: s.id, title: s.name, description: s.email, url: `/admin/students/${s.id}` }));
+    }
+
+    // 2. Search Faculty
+    if (hasPermission(role, PERMISSIONS.FACULTY_READ)) {
+      const facultyMatches = await db
+        .select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(and(eq(users.role, "faculty"), or(ilike(users.name, searchPattern), ilike(users.email, searchPattern))))
+        .limit(5);
+      facultyMatches.forEach(f => results.push({ type: 'faculty', id: f.id, title: f.name, description: f.email, url: `/admin/instructors/${f.id}` }));
+    }
+
+    // 3. Search Courses
+    if (hasPermission(role, PERMISSIONS.COURSES_READ)) {
+      const courseMatches = await db
+        .select({ id: courses.id, title: courses.title, code: courses.code })
+        .from(courses)
+        .where(or(ilike(courses.title, searchPattern), ilike(courses.code, searchPattern)))
+        .limit(5);
+      courseMatches.forEach(c => results.push({ type: 'course', id: c.id, title: c.title, description: c.code, url: `/admin/courses/${c.id}` }));
+    }
+
+    // 4. Search Assignments
+    if (hasPermission(role, PERMISSIONS.ASSIGNMENTS_READ)) {
+      const assignmentMatches = await db
+        .select({ id: assignments.id, title: assignments.title })
+        .from(assignments)
+        .where(ilike(assignments.title, searchPattern))
+        .limit(5);
+      assignmentMatches.forEach(a => results.push({ type: 'assignment', id: a.id, title: a.title, description: 'Assignment', url: `/admin/assignments` }));
+    }
+
+    // 5. Search Exams
+    if (hasPermission(role, PERMISSIONS.EXAMS_READ)) {
+      const examMatches = await db
+        .select({ id: exams.id, title: exams.title })
+        .from(exams)
+        .where(ilike(exams.title, searchPattern))
+        .limit(5);
+      examMatches.forEach(e => results.push({ type: 'exam', id: e.id, title: e.title, description: 'Exam', url: `/admin/exams` }));
+    }
+
+    res.json({ results });
+  } catch (error) {
+    console.error("Global search error:", error);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
 
 /**
  * GET /api/admin/dashboard

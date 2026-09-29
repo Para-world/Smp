@@ -10,6 +10,7 @@ import {
   numeric,
   pgEnum,
   jsonb,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -146,7 +147,9 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  roleIdx: index("users_role_idx").on(table.role),
+}));
 
 export const userSettings = pgTable("user_settings", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -191,7 +194,11 @@ export const studentProfiles = pgTable("student_profiles", {
   emergencyContactPhone: varchar("emergency_contact_phone", { length: 20 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("sp_user_idx").on(table.userId),
+  programIdx: index("sp_program_idx").on(table.programId),
+  semesterIdx: index("sp_semester_idx").on(table.semesterId),
+}));
 
 // ─── Security & Devices ──────────────────────────────────────────────────────
 
@@ -280,7 +287,10 @@ export const courses = pgTable("courses", {
   location: varchar("location", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  facultyIdx: index("courses_faculty_idx").on(table.facultyId),
+  semesterIdx: index("courses_semester_idx").on(table.semesterId),
+}));
 
 // ─── Class Schedules ─────────────────────────────────────────────────────────
 
@@ -300,7 +310,10 @@ export const classSchedules = pgTable("class_schedules", {
   meetingUrl: varchar("meeting_url", { length: 500 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  courseIdx: index("cs_course_idx").on(table.courseId),
+  instructorIdx: index("cs_instructor_idx").on(table.instructorId),
+}));
 
 // ─── Exams ───────────────────────────────────────────────────────────────────
 
@@ -327,7 +340,10 @@ export const exams = pgTable("exams", {
   cancellationReason: text("cancellation_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  courseIdx: index("exams_course_idx").on(table.courseId),
+  dateIdx: index("exams_date_idx").on(table.date),
+}));
 
 // ─── Enrollments ─────────────────────────────────────────────────────────────
 
@@ -343,7 +359,10 @@ export const enrollments = pgTable("enrollments", {
   enrolledAt: timestamp("enrolled_at", { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   finalGrade: varchar("final_grade", { length: 5 }),
-});
+}, (table) => ({
+  studentIdx: index("enroll_student_idx").on(table.studentId),
+  courseIdx: index("enroll_course_idx").on(table.courseId),
+}));
 
 // ─── Assignments ─────────────────────────────────────────────────────────────
 
@@ -365,7 +384,10 @@ export const assignments = pgTable("assignments", {
   maxAttempts: integer("max_attempts").notNull().default(1),
   isPublished: boolean("is_published").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  courseIdx: index("assign_course_idx").on(table.courseId),
+  dueDateIdx: index("assign_due_date_idx").on(table.dueDate),
+}));
 
 // ─── Submissions ─────────────────────────────────────────────────────────────
 
@@ -384,7 +406,10 @@ export const submissions = pgTable("submissions", {
   isLate: boolean("is_late").notNull().default(false),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  assignmentIdx: index("sub_assign_idx").on(table.assignmentId),
+  studentIdx: index("sub_student_idx").on(table.studentId),
+}));
 
 // ─── Grades ──────────────────────────────────────────────────────────────────
 
@@ -401,7 +426,10 @@ export const grades = pgTable("grades", {
   gradedBy: uuid("graded_by").references(() => users.id),
   gradedAt: timestamp("graded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  assignmentIdx: index("grades_assign_idx").on(table.assignmentId),
+  studentIdx: index("grades_student_idx").on(table.studentId),
+}));
 
 // ─── Attendance ──────────────────────────────────────────────────────────────
 
@@ -418,7 +446,11 @@ export const attendance = pgTable("attendance", {
   remarks: text("remarks"),
   markedBy: uuid("marked_by").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  courseIdx: index("attend_course_idx").on(table.courseId),
+  studentIdx: index("attend_student_idx").on(table.studentId),
+  dateIdx: index("attend_date_idx").on(table.date),
+}));
 
 // ─── Announcements ───────────────────────────────────────────────────────────
 
@@ -445,7 +477,10 @@ export const announcements = pgTable("announcements", {
   publishedAt: timestamp("published_at", { withTimezone: true }),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  courseIdx: index("ann_course_idx").on(table.courseId),
+  authorIdx: index("ann_author_idx").on(table.authorId),
+}));
 
 // ─── Notifications ───────────────────────────────────────────────────────────
 
@@ -461,7 +496,9 @@ export const notifications = pgTable("notifications", {
   isRead: boolean("is_read").notNull().default(false),
   readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdx: index("notif_user_idx").on(table.userId),
+}));
 
 // ─── Results ─────────────────────────────────────────────────────────────────
 
@@ -482,7 +519,11 @@ export const studentResults = pgTable("student_results", {
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  studentIdx: index("results_student_idx").on(table.studentId),
+  courseIdx: index("results_course_idx").on(table.courseId),
+  semesterIdx: index("results_semester_idx").on(table.semesterId),
+}));
 
 export const semesterResults = pgTable("semester_results", {
   id: uuid("id").defaultRandom().primaryKey(),

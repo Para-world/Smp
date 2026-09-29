@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Shield,
+  BarChart,
   ChevronLeft,
   Building2
 } from 'lucide-react';
@@ -67,6 +68,7 @@ const navGroups = [
   {
     title: 'System',
     items: [
+      { label: 'Reports', icon: BarChart, path: '/admin/reports' },
       { label: 'Audit Logs', icon: Shield, path: '/admin/audit-logs' },
       { label: 'Settings', icon: Settings, path: '/admin/settings' },
     ]

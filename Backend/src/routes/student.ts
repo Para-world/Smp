@@ -1,5 +1,6 @@
 import { Router, Response } from "express";
 import multer from "multer";
+import { storage } from "../services/storage.js";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -39,14 +40,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const avatarStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (req: AuthRequest, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const filename = `avatar-${req.user!.userId}-${Date.now()}${ext}`;
-    cb(null, filename);
-  },
-});
+const avatarStorage = multer.memoryStorage();
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -1108,8 +1102,8 @@ router.post(
         return;
       }
 
-      // Build the public URL path
-      const avatarUrl = `/uploads/avatars/${file.filename}`;
+      // Upload using storage service
+      const avatarUrl = await storage.upload(file, "avatars");
 
       // Delete old avatar file if it exists
       const [existingUser] = await db
@@ -1118,11 +1112,8 @@ router.post(
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (existingUser?.avatarUrl?.startsWith("/uploads/avatars/")) {
-        const oldPath = path.join(__dirname, "..", "..", existingUser.avatarUrl);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
+      if (existingUser?.avatarUrl) {
+        await storage.delete(existingUser.avatarUrl);
       }
 
       // Update the user's avatar URL

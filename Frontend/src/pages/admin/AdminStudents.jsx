@@ -104,26 +104,28 @@ export default function AdminStudents() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          {/* Desktop Table - hidden on mobile */}
+          <div className="hidden md:block bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse" role="table" aria-label="Students list">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <th className="px-6 py-4">Student</th>
-                    <th className="px-6 py-4">Program</th>
-                    <th className="px-6 py-4">Semester</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Enrollment Date</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                    <th scope="col" className="px-6 py-4">Student</th>
+                    <th scope="col" className="px-6 py-4">Program</th>
+                    <th scope="col" className="px-6 py-4">Semester</th>
+                    <th scope="col" className="px-6 py-4">Status</th>
+                    <th scope="col" className="px-6 py-4">Enrollment Date</th>
+                    <th scope="col" className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {loading ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
-                        <span className="material-symbols-outlined text-blue-500 text-[32px] animate-spin mb-3">progress_activity</span>
-                        <p>Loading students...</p>
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-500"></div>
+                          <p>Loading students...</p>
+                        </div>
                       </td>
                     </tr>
                   ) : students.length === 0 ? (
@@ -137,9 +139,9 @@ export default function AdminStudents() {
                       <tr key={student.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-sm overflow-hidden">
+                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-sm overflow-hidden" aria-hidden="true">
                               {student.avatarUrl ? (
-                                <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
+                                <img src={student.avatarUrl} alt="" className="h-full w-full object-cover" />
                               ) : (
                                 student.name.charAt(0)
                               )}
@@ -157,11 +159,12 @@ export default function AdminStudents() {
                           {student.semester ? `Semester ${student.semester}` : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             student.isActive 
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
                               : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                           }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${student.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true"></span>
                             {student.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
@@ -169,23 +172,23 @@ export default function AdminStudents() {
                           {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
                             <Link 
                               to={`/admin/students/${student.id}`}
-                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              title="View Profile"
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                              aria-label={`View profile for ${student.name}`}
                             >
                               <Eye size={18} />
                             </Link>
                             <button 
-                              className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                              title="Edit"
+                              className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                              aria-label={`Edit ${student.name}`}
                             >
                               <Edit2 size={18} />
                             </button>
                             <button 
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title={student.isActive ? "Deactivate" : "Activate"}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                              aria-label={student.isActive ? `Deactivate ${student.name}` : `Activate ${student.name}`}
                             >
                               <UserX size={18} />
                             </button>
@@ -197,35 +200,118 @@ export default function AdminStudents() {
                 </tbody>
               </table>
             </div>
+          </div>
 
-            {/* Pagination */}
-            {!loading && students.length > 0 && (
-              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Showing <span className="font-medium text-slate-900 dark:text-white">{((pagination.page - 1) * pagination.limit) + 1}</span> to <span className="font-medium text-slate-900 dark:text-white">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium text-slate-900 dark:text-white">{pagination.total}</span> results
-                </p>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page === 1}
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </span>
-                  <button 
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page === pagination.totalPages}
-                    className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-transparent"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
+          {/* Mobile Card View - shown only on mobile */}
+          <div className="md:hidden space-y-3">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-500"></div>
+                  <p className="text-slate-500 text-sm">Loading students...</p>
                 </div>
               </div>
+            ) : students.length === 0 ? (
+              <div className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500">
+                No students found matching your criteria.
+              </div>
+            ) : (
+              students.map((student) => (
+                <div key={student.id} className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-sm overflow-hidden" aria-hidden="true">
+                        {student.avatarUrl ? (
+                          <img src={student.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          student.name.charAt(0)
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 dark:text-white truncate">{student.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{student.email}</p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      student.isActive 
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${student.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true"></span>
+                      {student.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-sm">
+                    <div>
+                      <span className="text-slate-400 dark:text-slate-500 text-xs">Program</span>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">{student.program || 'Not assigned'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 dark:text-slate-500 text-xs">Semester</span>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">{student.semester ? `Semester ${student.semester}` : '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 dark:text-slate-500 text-xs">Enrolled</span>
+                      <p className="text-slate-700 dark:text-slate-300 font-medium">{student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : '-'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <Link 
+                      to={`/admin/students/${student.id}`}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`View profile for ${student.name}`}
+                    >
+                      <Eye size={18} />
+                    </Link>
+                    <button 
+                      className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`Edit ${student.name}`}
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                      aria-label={student.isActive ? `Deactivate ${student.name}` : `Activate ${student.name}`}
+                    >
+                      <UserX size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
+
+          {/* Pagination */}
+          {!loading && students.length > 0 && (
+            <div className="bg-white dark:bg-[#0B1120] rounded-xl md:rounded-none md:rounded-b-2xl border border-slate-200 dark:border-slate-800 md:border-t md:border-x-0 md:border-b-0 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm md:shadow-none">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Showing <span className="font-medium text-slate-900 dark:text-white">{((pagination.page - 1) * pagination.limit) + 1}</span> to <span className="font-medium text-slate-900 dark:text-white">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium text-slate-900 dark:text-white">{pagination.total}</span>
+              </p>
+              <nav aria-label="Pagination" className="flex items-center gap-2">
+                <button 
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2" aria-current="page">
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <button 
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </nav>
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -511,6 +511,16 @@ router.post("/students/bulk-import", requirePermission(PERMISSIONS.STUDENTS_CREA
         results.errors.push({ row: i + 1, email: row.email, error: err.message });
       }
     }
+    if (results.successful > 0) {
+      await db.insert(systemAuditLogs).values({
+        actorId: req.user!.userId,
+        action: "BULK_IMPORT_STUDENTS",
+        entity: "users",
+        newValue: JSON.stringify({ successful: results.successful, failed: results.failed }),
+        ipAddress: req.ip || req.socket.remoteAddress,
+        userAgent: req.headers["user-agent"]
+      });
+    }
 
     res.json(results);
   } catch (error) {

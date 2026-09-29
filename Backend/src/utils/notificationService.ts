@@ -101,60 +101,62 @@ async function dispatchNotification(
 
 // ─── Named Event Methods ─────────────────────────────────────────────────────
 
+export type CreateNotifyOptions = Omit<NotifyOptions, "entityType">;
+
 export const notify = {
   /** Assignment has been created / published */
-  assignmentCreated: (opts: NotifyOptions) =>
+  assignmentCreated: (opts: CreateNotifyOptions) =>
     dispatchNotification("ASSIGNMENT_CREATED", { ...opts, entityType: "assignment" }),
 
   /** Assignment is due soon */
-  assignmentDueSoon: (opts: NotifyOptions) =>
+  assignmentDueSoon: (opts: CreateNotifyOptions) =>
     dispatchNotification("ASSIGNMENT_DUE_SOON", { ...opts, entityType: "assignment" }),
 
   /** Assignment has been graded */
-  assignmentGraded: (opts: NotifyOptions) =>
+  assignmentGraded: (opts: CreateNotifyOptions) =>
     dispatchNotification("ASSIGNMENT_GRADED", { ...opts, entityType: "assignment" }),
 
   /** Exam created */
-  examCreated: (opts: NotifyOptions) =>
+  examCreated: (opts: CreateNotifyOptions) =>
     dispatchNotification("EXAM_CREATED", { ...opts, entityType: "exam" }),
 
   /** Exam updated (date, venue, etc.) */
-  examUpdated: (opts: NotifyOptions) =>
+  examUpdated: (opts: CreateNotifyOptions) =>
     dispatchNotification("EXAM_UPDATED", { ...opts, entityType: "exam" }),
 
   /** Exam cancelled */
-  examCancelled: (opts: NotifyOptions) =>
+  examCancelled: (opts: CreateNotifyOptions) =>
     dispatchNotification("EXAM_CANCELLED", { ...opts, entityType: "exam" }),
 
   /** Exam postponed */
-  examPostponed: (opts: NotifyOptions) =>
+  examPostponed: (opts: CreateNotifyOptions) =>
     dispatchNotification("EXAM_POSTPONED", { ...opts, entityType: "exam" }),
 
   /** Timetable updated */
-  timetableUpdated: (opts: NotifyOptions) =>
+  timetableUpdated: (opts: CreateNotifyOptions) =>
     dispatchNotification("TIMETABLE_UPDATED", { ...opts, entityType: "timetable" }),
 
   /** Class cancelled */
-  classCancelled: (opts: NotifyOptions) =>
+  classCancelled: (opts: CreateNotifyOptions) =>
     dispatchNotification("CLASS_CANCELLED", { ...opts, entityType: "timetable" }),
 
   /** Room changed */
-  roomChanged: (opts: NotifyOptions) =>
+  roomChanged: (opts: CreateNotifyOptions) =>
     dispatchNotification("ROOM_CHANGED", { ...opts, entityType: "timetable" }),
 
   /** Result published */
-  resultPublished: (opts: NotifyOptions) =>
+  resultPublished: (opts: CreateNotifyOptions) =>
     dispatchNotification("RESULT_PUBLISHED", { ...opts, entityType: "result" }),
 
   /** Attendance warning */
-  attendanceWarning: (opts: NotifyOptions) =>
+  attendanceWarning: (opts: CreateNotifyOptions) =>
     dispatchNotification("ATTENDANCE_WARNING", { ...opts, entityType: "attendance" }),
 
   /** Announcement published */
-  announcementPublished: (opts: NotifyOptions) =>
+  announcementPublished: (opts: CreateNotifyOptions) =>
     dispatchNotification("ANNOUNCEMENT_PUBLISHED", { ...opts, entityType: "announcement" }),
 
   /** Generic system notification */
-  system: (opts: NotifyOptions) =>
+  system: (opts: CreateNotifyOptions) =>
     dispatchNotification("SYSTEM", { ...opts, entityType: "system" }),
 };

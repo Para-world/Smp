@@ -859,18 +859,18 @@ router.post("/announcements", requireAuth, requireRole("faculty"), async (req: A
     const facultyId = req.user!.userId;
 
     // Faculty specific authorization check
-    if (data.audience === 'COURSE') {
-      if (!data.courseId) {
-        res.status(400).json({ error: "Course ID is required for COURSE audience" });
-        return;
-      }
-      const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
-      if (course.length === 0) {
-        res.status(403).json({ error: "Not authorized to publish to this course" });
-        return;
-      }
-    } else if (data.audience === 'ALL') {
-      res.status(403).json({ error: "Faculty cannot publish to ALL students. Please contact Admin." });
+    if (data.audience !== 'COURSE') {
+      res.status(403).json({ error: "Faculty can only publish announcements to their assigned courses. Please contact Admin for wider distribution." });
+      return;
+    }
+    
+    if (!data.courseId) {
+      res.status(400).json({ error: "Course ID is required for COURSE audience" });
+      return;
+    }
+    const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
+    if (course.length === 0) {
+      res.status(403).json({ error: "Not authorized to publish to this course" });
       return;
     }
 
@@ -911,12 +911,19 @@ router.put("/announcements/:id", requireAuth, requireRole("faculty"), async (req
       return;
     }
 
-    if (data.audience === 'COURSE' && data.courseId) {
-      const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
-      if (course.length === 0) {
-        res.status(403).json({ error: "Not authorized to publish to this course" });
-        return;
-      }
+    if (data.audience !== 'COURSE') {
+      res.status(403).json({ error: "Faculty can only publish announcements to their assigned courses. Please contact Admin for wider distribution." });
+      return;
+    }
+    
+    if (!data.courseId) {
+      res.status(400).json({ error: "Course ID is required for COURSE audience" });
+      return;
+    }
+    const course = await db.select().from(courses).where(and(eq(courses.id, data.courseId), eq(courses.facultyId, facultyId)));
+    if (course.length === 0) {
+      res.status(403).json({ error: "Not authorized to publish to this course" });
+      return;
     }
 
     let publishedAt = undefined;

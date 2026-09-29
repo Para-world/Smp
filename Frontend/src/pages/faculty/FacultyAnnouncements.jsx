@@ -3,10 +3,9 @@ import {
   fetchFacultyAnnouncements, 
   createFacultyAnnouncement, 
   updateFacultyAnnouncement, 
-  deleteFacultyAnnouncement 
+  deleteFacultyAnnouncement,
+  fetchFacultyCourses
 } from '../../services/facultyApi';
-// Ensure fetchFacultyCourses exists or use a generic admin one if faculty can view courses. Actually, faculty needs to fetch their own courses. Let's assume we have it or we can just let them type it, but wait, faculty should have a way to fetch their courses.
-// I will just use fetchFacultyCourses. Wait, let's check if it exists, if not we add it. 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,8 +22,7 @@ export default function FacultyAnnouncements() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Just for this mock UI, faculty enters course ID manually if API is missing, but ideally they select.
-  // We'll leave courseId as an input string for now.
+  const [courses, setCourses] = useState([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAnn, setEditingAnn] = useState(null);
@@ -50,8 +48,12 @@ export default function FacultyAnnouncements() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await fetchFacultyAnnouncements();
-      setAnnouncements(data);
+      const [annData, courseData] = await Promise.all([
+        fetchFacultyAnnouncements(),
+        fetchFacultyCourses()
+      ]);
+      setAnnouncements(annData);
+      setCourses(courseData);
     } catch (error) {
       toast.error('Failed to load announcements');
     } finally {
@@ -255,8 +257,15 @@ export default function FacultyAnnouncements() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Course ID * (Must be your assigned course)</Label>
-                  <Input name="courseId" value={formData.courseId} onChange={handleInputChange} placeholder="Course ID" required />
+                  <Label>Course *</Label>
+                  <Select value={formData.courseId} onValueChange={v => setFormData(p => ({ ...p, courseId: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
+                    <SelectContent>
+                      {courses.map(course => (
+                        <SelectItem key={course.id} value={course.id}>{course.code} - {course.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

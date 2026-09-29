@@ -40,6 +40,9 @@ export default function FacultyTimetable() {
     };
   });
 
+  const currentDayIndex = new Date().getDay();
+  const todaysClasses = schedules.filter(s => s.dayOfWeek === currentDayIndex).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
   return (
     <FacultyLayout pageTitle="My Timetable">
       <div className="space-y-8 max-w-[1400px] mx-auto px-2">
@@ -57,6 +60,48 @@ export default function FacultyTimetable() {
             </p>
           </div>
         </div>
+
+        {/* Today's Classes */}
+        {!loading && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl shadow-sm border border-emerald-100 dark:border-emerald-800 p-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-emerald-600" /> Today's Classes
+            </h2>
+            {todaysClasses.length === 0 ? (
+              <div className="text-slate-500 dark:text-slate-400 py-4">No classes scheduled for today. Enjoy your day!</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {todaysClasses.map(sch => (
+                  <Card key={sch.id} className="group relative overflow-hidden rounded-xl border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900">
+                    <div className={`h-1.5 w-full ${sch.isOnline ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-emerald-500 to-teal-600'}`} />
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="space-y-1">
+                          <Badge variant="outline" className={`font-semibold tracking-wide text-[10px] uppercase ${sch.isOnline ? 'border-blue-200 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-emerald-200 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'}`}>
+                            {sch.classType}
+                          </Badge>
+                          <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 line-clamp-1" title={sch.courseTitle}>
+                            {sch.courseCode}
+                          </h3>
+                        </div>
+                      </div>
+                      <div className="space-y-2 mt-2 text-sm">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                          <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="font-medium">{sch.startTime} - {sch.endTime}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                          {sch.isOnline ? <MonitorPlay className="h-3.5 w-3.5 text-blue-500" /> : <MapPin className="h-3.5 w-3.5 text-slate-400" />}
+                          <span className="truncate font-medium">{sch.isOnline ? 'Online Meeting' : (sch.room || 'Room TBA')}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center items-center p-20 min-h-[400px]">

@@ -57,6 +57,7 @@ import FacultyCourses from './pages/faculty/FacultyCourses'
 import FacultyCourseDetail from './pages/faculty/FacultyCourseDetail'
 import FacultyAssignments from './pages/faculty/FacultyAssignments'
 import FacultyAssignmentCreate from './pages/faculty/FacultyAssignmentCreate'
+import FacultyAssignmentEdit from './pages/faculty/FacultyAssignmentEdit'
 import FacultyAssignmentDetail from './pages/faculty/FacultyAssignmentDetail'
 import FacultyExams from './pages/faculty/FacultyExams'
 import FacultyExamCreate from './pages/faculty/FacultyExamCreate'
@@ -633,6 +634,14 @@ function AppContent() {
           element={
             <FacultyRoute>
               <FacultyAssignmentCreate />
+            </FacultyRoute>
+          }
+        />
+        <Route
+          path="/faculty/assignments/:assignmentId/edit"
+          element={
+            <FacultyRoute>
+              <FacultyAssignmentEdit />
             </FacultyRoute>
           }
         />

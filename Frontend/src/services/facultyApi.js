@@ -112,6 +112,31 @@ export const createFacultyAssignment = async (data) => {
   return response.json();
 };
 
+export const updateFacultyAssignment = async (assignmentId, data) => {
+  const response = await fetch(`${API_URL}/faculty/assignments/${assignmentId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to update assignment');
+  }
+  return response.json();
+};
+
+export const deleteFacultyAssignment = async (assignmentId) => {
+  const response = await fetch(`${API_URL}/faculty/assignments/${assignmentId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to delete assignment');
+  }
+  return response.json();
+};
+
 export const fetchAssignmentSubmissions = async (assignmentId) => {
   const response = await fetch(`${API_URL}/faculty/assignments/${assignmentId}/submissions`, {
     headers: getAuthHeaders(),

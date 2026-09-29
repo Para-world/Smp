@@ -414,6 +414,90 @@ router.post("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_CREATE), a
 });
 
 /**
+ * PUT /api/faculty/assignments/:assignmentId
+ * Edit an assignment (only if it belongs to faculty)
+ */
+router.put("/assignments/:assignmentId", requirePermission(PERMISSIONS.ASSIGNMENTS_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const assignmentId = req.params.assignmentId as string;
+    const facultyId = req.user!.userId;
+    const { 
+      title, description, instructions, attachments,
+      dueDate, maxScore, weight, allowLateSubmission, allowResubmission, maxAttempts, isPublished
+    } = req.body;
+
+    // Verify assignment belongs to faculty's course
+    const [existing] = await db
+      .select({ id: assignments.id, courseId: assignments.courseId })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(and(eq(assignments.id, assignmentId), eq(courses.facultyId, facultyId)));
+
+    if (!existing) {
+      res.status(403).json({ error: "Access denied or assignment not found" });
+      return;
+    }
+
+    const updates: any = { updatedAt: new Date() };
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (instructions !== undefined) updates.instructions = instructions;
+    if (attachments !== undefined) updates.attachments = attachments;
+    if (dueDate !== undefined) updates.dueDate = dueDate ? new Date(dueDate) : null;
+    if (maxScore !== undefined) updates.maxScore = maxScore;
+    if (weight !== undefined) updates.weight = weight;
+    if (allowLateSubmission !== undefined) updates.allowLateSubmission = allowLateSubmission;
+    if (allowResubmission !== undefined) updates.allowResubmission = allowResubmission;
+    if (maxAttempts !== undefined) updates.maxAttempts = maxAttempts;
+    if (isPublished !== undefined) updates.isPublished = isPublished;
+
+    const [updatedAssignment] = await db.update(assignments)
+      .set(updates)
+      .where(eq(assignments.id, assignmentId))
+      .returning();
+
+    res.json(updatedAssignment);
+  } catch (error) {
+    console.error("Error updating assignment:", error);
+    res.status(500).json({ error: "Failed to update assignment" });
+  }
+});
+
+/**
+ * DELETE /api/faculty/assignments/:assignmentId
+ * Archive/delete an assignment (only if it belongs to faculty)
+ */
+router.delete("/assignments/:assignmentId", requirePermission(PERMISSIONS.ASSIGNMENTS_DELETE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const assignmentId = req.params.assignmentId as string;
+    const facultyId = req.user!.userId;
+
+    // Verify assignment belongs to faculty's course
+    const [existing] = await db
+      .select({ id: assignments.id })
+      .from(assignments)
+      .innerJoin(courses, eq(assignments.courseId, courses.id))
+      .where(and(eq(assignments.id, assignmentId), eq(courses.facultyId, facultyId)));
+
+    if (!existing) {
+      res.status(403).json({ error: "Access denied or assignment not found" });
+      return;
+    }
+
+    // Delete associated grades and submissions first to avoid foreign key constraints
+    await db.delete(grades).where(eq(grades.assignmentId, assignmentId));
+    await db.delete(submissions).where(eq(submissions.assignmentId, assignmentId));
+    
+    await db.delete(assignments).where(eq(assignments.id, assignmentId));
+
+    res.json({ message: "Assignment deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting assignment:", error);
+    res.status(500).json({ error: "Failed to delete assignment" });
+  }
+});
+
+/**
  * GET /api/faculty/assignments
  * List assignments for faculty courses
  */
@@ -430,6 +514,7 @@ router.get("/assignments", requirePermission(PERMISSIONS.ASSIGNMENTS_READ), asyn
         courseId: courses.id,
         courseTitle: courses.title,
         courseCode: courses.code,
+        isPublished: assignments.isPublished,
       })
       .from(assignments)
       .innerJoin(courses, eq(assignments.courseId, courses.id))

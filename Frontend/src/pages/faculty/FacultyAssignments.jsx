@@ -4,7 +4,8 @@ import { fetchFacultyAssignments } from '../../services/facultyApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { FileText, Plus, Users, Calendar, ArrowRight } from 'lucide-react';
+import { FileText, Plus, Users, Calendar, ArrowRight, MoreVertical, Edit, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 export default function FacultyAssignments() {
@@ -24,6 +25,29 @@ export default function FacultyAssignments() {
       toast.error(error.message || "Failed to load assignments");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTogglePublish = async (assignment) => {
+    try {
+      const { updateFacultyAssignment } = await import('../../services/facultyApi');
+      await updateFacultyAssignment(assignment.id, { isPublished: !assignment.isPublished });
+      toast.success(`Assignment ${assignment.isPublished ? 'unpublished' : 'published'} successfully`);
+      loadAssignments();
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleDelete = async (assignmentId) => {
+    if (!window.confirm("Are you sure you want to archive/delete this assignment?")) return;
+    try {
+      const { deleteFacultyAssignment } = await import('../../services/facultyApi');
+      await deleteFacultyAssignment(assignmentId);
+      toast.success("Assignment archived successfully");
+      loadAssignments();
+    } catch (error) {
+      toast.error("Failed to archive assignment");
     }
   };
 
@@ -66,11 +90,40 @@ export default function FacultyAssignments() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-xl mb-1 line-clamp-1">{assignment.title}</CardTitle>
-                    <CardDescription className="flex items-center gap-1.5 text-sm font-medium text-primary/80">
-                      <span className="bg-primary/10 px-2 py-0.5 rounded text-xs">{assignment.courseCode}</span>
+                    <CardDescription className="flex items-center gap-2 text-sm font-medium">
+                      <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">{assignment.courseCode}</span>
                       <span className="truncate max-w-[120px]">{assignment.courseTitle}</span>
+                      {assignment.isPublished ? (
+                        <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded text-xs ml-auto border border-green-200 dark:border-green-800">Published</span>
+                      ) : (
+                        <span className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded text-xs ml-auto border border-yellow-200 dark:border-yellow-800">Draft</span>
+                      )}
                     </CardDescription>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link to={`/faculty/assignments/${assignment.id}/edit`} state={{ assignment }}>
+                          <Edit className="h-4 w-4 mr-2" /> Edit Assignment
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTogglePublish(assignment)}>
+                        {assignment.isPublished ? (
+                          <><EyeOff className="h-4 w-4 mr-2" /> Unpublish</>
+                        ) : (
+                          <><Eye className="h-4 w-4 mr-2" /> Publish</>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(assignment.id)} className="text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950">
+                        <Trash2 className="h-4 w-4 mr-2" /> Archive
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardHeader>
               <CardContent>

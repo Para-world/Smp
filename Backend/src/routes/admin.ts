@@ -1135,6 +1135,17 @@ router.put("/exams/:id", requirePermission(PERMISSIONS.EXAMS_UPDATE), async (req
       return;
     }
 
+    await logAudit(
+      req.user!.userId,
+      "UPDATE",
+      "EXAM",
+      examId,
+      null,
+      { status: updatedExam.status },
+      req.ip,
+      req.headers["user-agent"]
+    );
+
     res.json(updatedExam);
   } catch (error) {
     console.error("Error updating exam:", error);

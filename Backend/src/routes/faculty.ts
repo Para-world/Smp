@@ -16,8 +16,8 @@ import {
 } from "../db/schema.js";
 import { eq, count, and, desc, sql, gte, inArray, or } from "drizzle-orm";
 import { requireAuth, AuthRequest, requirePermission, requireRole } from "../utils/middleware.js";
-import { PERMISSIONS } from "../utils/permissions.js";
 import { notify } from "../utils/notificationService.js";
+import { logAudit } from "../utils/auditLogger.js";
 
 const router = Router();
 
@@ -252,6 +252,17 @@ router.post("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTEN
         });
       }
     });
+
+    await logAudit(
+      facultyId,
+      "BULK_CREATE",
+      "ATTENDANCE",
+      courseId,
+      null,
+      { date, recordCount: records.length },
+      req.ip,
+      req.headers["user-agent"]
+    );
 
     res.status(200).json({ message: "Attendance saved successfully" });
   } catch (error) {
@@ -636,6 +647,17 @@ router.post("/assignments/:assignmentId/submissions/:studentId/grade", requirePe
     await db.update(submissions)
       .set({ status: 'graded' })
       .where(and(eq(submissions.assignmentId, assignmentId), eq(submissions.studentId, studentId)));
+
+    await logAudit(
+      facultyId,
+      "UPDATE",
+      "SUBMISSION_GRADE",
+      studentId, // Note: using studentId since submission.id might not be queried here
+      null, // old value omitted for brevity here
+      { assignmentId, studentId, grade: req.body.grade },
+      req.ip,
+      req.headers["user-agent"]
+    );
 
     res.json({ message: "Grade saved successfully" });
   } catch (error) {

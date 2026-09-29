@@ -17,7 +17,9 @@ import {
   notifications,
   submissions,
   systemAuditLogs,
-  systemSettings
+  systemSettings,
+  departments,
+  programs
 } from "../db/schema.js";
 import { eq, count, and, gt, desc, ilike, or, sql, gte, lte } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -2129,6 +2131,151 @@ router.put("/semesters/:id", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async
       res.status(400).json({ error: "Semester code already exists" });
     } else {
       res.status(500).json({ error: "Failed to update semester" });
+    }
+  }
+});
+// ─── DEPARTMENTS API ───────────────────────────────────────────────────────
+
+router.get("/departments", requirePermission(PERMISSIONS.SYSTEM_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = await db.select().from(departments).orderBy(departments.name);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    res.status(500).json({ error: "Failed to fetch departments" });
+  }
+});
+
+router.post("/departments", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name, code, description, headId } = req.body;
+    
+    if (!name || !code) {
+      res.status(400).json({ error: "Name and code are required" });
+      return;
+    }
+
+    const [newDept] = await db.insert(departments).values({
+      name,
+      code,
+      description,
+      headId: headId || null
+    }).returning();
+
+    await logAudit(req.user!.userId, "CREATE", "DEPARTMENT", newDept.id, null, newDept, req.ip, req.headers["user-agent"]);
+
+    res.status(201).json(newDept);
+  } catch (error: any) {
+    console.error("Error creating department:", error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: "Department code or name already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to create department" });
+    }
+  }
+});
+
+router.put("/departments/:id", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { name, code, description, headId } = req.body;
+
+    const [existing] = await db.select().from(departments).where(eq(departments.id, id));
+    if (!existing) {
+      res.status(404).json({ error: "Department not found" });
+      return;
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (code !== undefined) updateData.code = code;
+    if (description !== undefined) updateData.description = description;
+    if (headId !== undefined) updateData.headId = headId;
+
+    const [updated] = await db.update(departments).set(updateData).where(eq(departments.id, id)).returning();
+
+    await logAudit(req.user!.userId, "UPDATE", "DEPARTMENT", updated.id, existing, updated, req.ip, req.headers["user-agent"]);
+
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating department:", error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: "Department code or name already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to update department" });
+    }
+  }
+});
+
+// ─── PROGRAMS API ──────────────────────────────────────────────────────────
+
+router.get("/programs", requirePermission(PERMISSIONS.SYSTEM_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const data = await db.select().from(programs).orderBy(programs.name);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching programs:", error);
+    res.status(500).json({ error: "Failed to fetch programs" });
+  }
+});
+
+router.post("/programs", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { name, code, description, departmentId } = req.body;
+    
+    if (!name || !code || !departmentId) {
+      res.status(400).json({ error: "Name, code, and departmentId are required" });
+      return;
+    }
+
+    const [newProg] = await db.insert(programs).values({
+      name,
+      code,
+      description,
+      departmentId
+    }).returning();
+
+    await logAudit(req.user!.userId, "CREATE", "PROGRAM", newProg.id, null, newProg, req.ip, req.headers["user-agent"]);
+
+    res.status(201).json(newProg);
+  } catch (error: any) {
+    console.error("Error creating program:", error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: "Program code or name already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to create program" });
+    }
+  }
+});
+
+router.put("/programs/:id", requirePermission(PERMISSIONS.SYSTEM_UPDATE), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { name, code, description, departmentId } = req.body;
+
+    const [existing] = await db.select().from(programs).where(eq(programs.id, id));
+    if (!existing) {
+      res.status(404).json({ error: "Program not found" });
+      return;
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (code !== undefined) updateData.code = code;
+    if (description !== undefined) updateData.description = description;
+    if (departmentId !== undefined) updateData.departmentId = departmentId;
+
+    const [updated] = await db.update(programs).set(updateData).where(eq(programs.id, id)).returning();
+
+    await logAudit(req.user!.userId, "UPDATE", "PROGRAM", updated.id, existing, updated, req.ip, req.headers["user-agent"]);
+
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating program:", error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: "Program code or name already exists" });
+    } else {
+      res.status(500).json({ error: "Failed to update program" });
     }
   }
 });

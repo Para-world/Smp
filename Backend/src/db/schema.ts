@@ -181,9 +181,9 @@ export const studentProfiles = pgTable("student_profiles", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 100 }),
   postalCode: varchar("postal_code", { length: 20 }),
-  program: varchar("program", { length: 255 }),
-  department: varchar("department", { length: 255 }),
-  semester: integer("semester"),
+  programId: uuid("program_id").references(() => programs.id),
+  departmentId: uuid("department_id").references(() => departments.id),
+  semesterId: uuid("semester_id").references(() => semesters.id),
   academicYear: varchar("academic_year", { length: 20 }),
   enrollmentDate: date("enrollment_date"),
   status: studentStatusEnum("status").notNull().default("active"),
@@ -235,6 +235,17 @@ export const departments = pgTable("departments", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ─── Programs ────────────────────────────────────────────────────────────────
+
+export const programs = pgTable("programs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  code: varchar("code", { length: 20 }).notNull().unique(),
+  description: text("description"),
+  departmentId: uuid("department_id").notNull().references(() => departments.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Semesters ───────────────────────────────────────────────────────────────
 
 export const semesters = pgTable("semesters", {
@@ -259,6 +270,7 @@ export const courses = pgTable("courses", {
   departmentId: uuid("department_id")
     .notNull()
     .references(() => departments.id),
+  programId: uuid("program_id").references(() => programs.id),
   semesterId: uuid("semester_id")
     .notNull()
     .references(() => semesters.id),

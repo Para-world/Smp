@@ -45,6 +45,7 @@ const navGroups = [
   {
     title: 'Academics',
     items: [
+      { label: 'Organization', icon: Building2, path: '/admin/organization' },
       { label: 'Semesters', icon: Calendar, path: '/admin/semesters' },
       { label: 'Courses', icon: BookOpen, path: '/admin/courses' },
       { label: 'Enrollments', icon: ClipboardCheck, path: '/admin/enrollments' },

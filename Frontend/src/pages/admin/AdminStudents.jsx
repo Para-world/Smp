@@ -11,6 +11,7 @@ import AdminHeader from '../../components/admin/AdminHeader';
 import { LoadingState, ErrorState, EmptyState } from '../../components/ui/states';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { FilterSheet } from '../../components/ui/FilterSheet';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 
 export default function AdminStudents() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -147,50 +148,49 @@ export default function AdminStudents() {
           </div>
 
           {/* Desktop Table - hidden on mobile */}
-          <div className="hidden md:block bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse" role="table" aria-label="Students list">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <th scope="col" className="px-6 py-4">Student</th>
-                    <th scope="col" className="px-6 py-4">Program</th>
-                    <th scope="col" className="px-6 py-4">Semester</th>
-                    <th scope="col" className="px-6 py-4">Status</th>
-                    <th scope="col" className="px-6 py-4">Enrollment Date</th>
-                    <th scope="col" className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {loading ? (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-12">
-                        <LoadingState message="Loading students..." />
-                      </td>
-                    </tr>
-                  ) : error ? (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-12">
-                        <ErrorState message={error} onRetry={() => loadStudents(pagination.page)} />
-                      </td>
-                    </tr>
-                  ) : students.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-12">
-                        <EmptyState 
-                          title="No students found" 
-                          message={search || statusFilter ? "No students match your current filters." : "You haven't added any students yet."}
-                          action={
-                            <Link to="/admin/students/create" className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
-                              <Plus size={16} /> Add Student
-                            </Link>
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ) : (
+          <div className="hidden md:block bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50 dark:bg-[#050811] hover:bg-slate-50 dark:hover:bg-[#050811]">
+                  <TableHead className="w-[30%]">Student</TableHead>
+                  <TableHead>Program</TableHead>
+                  <TableHead>Semester</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Enrollment Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan="6" className="py-12">
+                      <LoadingState message="Loading students..." />
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan="6" className="py-12">
+                      <ErrorState message={error} onRetry={() => loadStudents(pagination.page)} />
+                    </TableCell>
+                  </TableRow>
+                ) : students.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan="6" className="py-12">
+                      <EmptyState 
+                        title="No students found" 
+                        message={search || statusFilter ? "No students match your current filters." : "You haven't added any students yet."}
+                        action={
+                          <Link to="/admin/students/create" className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+                            <Plus size={16} /> Add Student
+                          </Link>
+                        }
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
                     students.map((student) => (
-                      <tr key={student.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <TableRow key={student.id}>
+                        <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-sm overflow-hidden" aria-hidden="true">
                               {student.avatarUrl ? (
@@ -204,14 +204,14 @@ export default function AdminStudents() {
                               <p className="text-sm text-slate-500 dark:text-slate-400">{student.email}</p>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                        </TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-300">
                           {student.program || 'Not assigned'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                        </TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-300">
                           {student.semester ? `Semester ${student.semester}` : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell>
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             student.isActive 
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
@@ -220,11 +220,11 @@ export default function AdminStudents() {
                             <span className={`h-1.5 w-1.5 rounded-full ${student.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} aria-hidden="true"></span>
                             {student.isActive ? 'Active' : 'Inactive'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                        </TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-300">
                           {student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
                           <div className="flex items-center justify-end gap-1">
                             <Link 
                               to={`/admin/students/${student.id}`}
@@ -247,13 +247,12 @@ export default function AdminStudents() {
                               <UserX size={18} />
                             </button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
-            </div>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mobile Card View - shown only on mobile */}

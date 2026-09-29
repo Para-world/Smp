@@ -1,43 +1,45 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, AlertTriangle, UserPlus } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { studentSchema } from '../../lib/validations';
 import { createAdminStudent } from '../../services/adminApi';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
+import { toast } from 'sonner';
 
 export default function AdminStudentCreate() {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
+  const [serverError, setServerError] = useState(null);
 
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', phone: '', dateOfBirth: '',
-    gender: '', address: '', program: '', department: '', semester: '',
-    academicYear: '', status: 'active'
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(studentSchema),
+    defaultValues: {
+      status: 'active',
+      semester: ''
+    }
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const onSubmit = async (data) => {
+    setServerError(null);
     try {
-      await createAdminStudent(formData);
-      setSuccess(true);
-      setTimeout(() => navigate('/admin/students'), 2000);
+      await createAdminStudent(data);
+      toast.success('Student created successfully');
+      navigate('/admin/students');
     } catch (err) {
-      setError(err.message || 'Failed to create student');
-    } finally {
-      setLoading(false);
+      setServerError(err.message || 'Failed to create student');
+      toast.error('Failed to create student');
     }
   };
+
+  const inputClass = (fieldName) => `w-full px-4 py-2.5 rounded-xl border ${errors[fieldName] ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-slate-800 focus:ring-blue-500'} bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 transition-colors`;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#050811] transition-colors">
@@ -74,45 +76,41 @@ export default function AdminStudentCreate() {
             </div>
             
             <div className="p-6 md:p-8">
-              {error && (
+              {serverError && (
                 <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-start gap-3">
                   <AlertTriangle size={20} className="mt-0.5 flex-shrink-0" />
-                  <p className="text-sm font-medium">{error}</p>
+                  <p className="text-sm font-medium">{serverError}</p>
                 </div>
               )}
 
-              {success && (
-                <div className="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-start gap-3">
-                  <span className="material-symbols-outlined text-[20px] flex-shrink-0 mt-0.5">check_circle</span>
-                  <p className="text-sm font-medium">Student created successfully. Redirecting...</p>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">First Name *</label>
-                    <input required type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input {...register('firstName')} className={inputClass('firstName')} />
+                    {errors.firstName && <p className="mt-1 text-sm text-red-500">{errors.firstName.message}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Last Name *</label>
-                    <input required type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input {...register('lastName')} className={inputClass('lastName')} />
+                    {errors.lastName && <p className="mt-1 text-sm text-red-500">{errors.lastName.message}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address *</label>
-                    <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="email" {...register('email')} className={inputClass('email')} />
+                    {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone Number</label>
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="tel" {...register('phone')} className={inputClass('phone')} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date of Birth</label>
-                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="date" {...register('dateOfBirth')} className={inputClass('dateOfBirth')} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gender</label>
-                    <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select {...register('gender')} className={inputClass('gender')}>
                       <option value="">Select Gender</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
@@ -124,7 +122,7 @@ export default function AdminStudentCreate() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Address</label>
-                  <textarea name="address" rows="3" value={formData.address} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                  <textarea rows="3" {...register('address')} className={inputClass('address')}></textarea>
                 </div>
 
                 <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
@@ -132,23 +130,24 @@ export default function AdminStudentCreate() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Program</label>
-                      <input type="text" name="program" placeholder="e.g. Bachelor of Computer Applications" value={formData.program} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="text" {...register('program')} placeholder="e.g. Bachelor of Computer Applications" className={inputClass('program')} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Department</label>
-                      <input type="text" name="department" placeholder="e.g. Computer Science" value={formData.department} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="text" {...register('department')} placeholder="e.g. Computer Science" className={inputClass('department')} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Semester</label>
-                      <input type="number" min="1" max="10" name="semester" value={formData.semester} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="number" min="1" max="10" {...register('semester')} className={inputClass('semester')} />
+                      {errors.semester && <p className="mt-1 text-sm text-red-500">{errors.semester.message}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Academic Year</label>
-                      <input type="text" name="academicYear" placeholder="e.g. 2026-2027" value={formData.academicYear} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="text" {...register('academicYear')} placeholder="e.g. 2026-2027" className={inputClass('academicYear')} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
-                      <select name="status" value={formData.status} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <select {...register('status')} className={inputClass('status')}>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
@@ -160,9 +159,9 @@ export default function AdminStudentCreate() {
                   <Link to="/admin/students" className="px-5 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                     Cancel
                   </Link>
-                  <button type="submit" disabled={loading} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-semibold shadow-sm transition-colors">
-                    {loading ? <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> : <Save size={18} />}
-                    {loading ? 'Saving...' : 'Create Student'}
+                  <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-semibold shadow-sm transition-colors">
+                    {isSubmitting ? <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> : <Save size={18} />}
+                    {isSubmitting ? 'Saving...' : 'Create Student'}
                   </button>
                 </div>
               </form>

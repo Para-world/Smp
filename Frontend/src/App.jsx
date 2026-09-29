@@ -63,6 +63,7 @@ import FacultyExams from './pages/faculty/FacultyExams'
 import FacultyExamCreate from './pages/faculty/FacultyExamCreate'
 import FacultyTimetable from './pages/faculty/FacultyTimetable'
 import FacultyAnnouncements from './pages/faculty/FacultyAnnouncements'
+import CommandPalette from './components/CommandPalette'
 import FacultyLayout from './components/faculty/FacultyLayout'
 
 // Protected route wrapper
@@ -222,6 +223,7 @@ function AppContent() {
   return (
     <div className="bg-slate-50 dark:bg-[#050811] font-body-md text-body-md text-slate-800 dark:text-slate-300 antialiased transition-colors duration-300 min-h-screen">
       <CustomCursor />
+      <CommandPalette />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />

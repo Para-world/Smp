@@ -8,6 +8,7 @@ import {
 import { fetchAdminStudents } from '../../services/adminApi';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
+import { LoadingState, ErrorState, EmptyState } from '../../components/ui/states';
 
 export default function AdminStudents() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -17,15 +18,18 @@ export default function AdminStudents() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [error, setError] = useState(null);
 
   const loadStudents = async (page = 1) => {
     setLoading(true);
+    setError(null);
     try {
       const result = await fetchAdminStudents({ page, limit: 10, search, status: statusFilter });
       setStudents(result.data);
       setPagination(result.pagination);
     } catch (err) {
       console.error(err);
+      setError(err.message || 'Failed to load students');
     } finally {
       setLoading(false);
     }
@@ -121,17 +125,28 @@ export default function AdminStudents() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {loading ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-500"></div>
-                          <p>Loading students...</p>
-                        </div>
+                      <td colSpan="6" className="px-6 py-12">
+                        <LoadingState message="Loading students..." />
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-12">
+                        <ErrorState message={error} onRetry={() => loadStudents(pagination.page)} />
                       </td>
                     </tr>
                   ) : students.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
-                        <p>No students found matching your criteria.</p>
+                      <td colSpan="6" className="px-6 py-12">
+                        <EmptyState 
+                          title="No students found" 
+                          message={search || statusFilter ? "No students match your current filters." : "You haven't added any students yet."}
+                          action={
+                            <Link to="/admin/students/create" className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+                              <Plus size={16} /> Add Student
+                            </Link>
+                          }
+                        />
                       </td>
                     </tr>
                   ) : (
@@ -205,16 +220,15 @@ export default function AdminStudents() {
           {/* Mobile Card View - shown only on mobile */}
           <div className="md:hidden space-y-3">
             {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-500"></div>
-                  <p className="text-slate-500 text-sm">Loading students...</p>
-                </div>
-              </div>
+              <LoadingState message="Loading students..." className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 py-12" />
+            ) : error ? (
+              <ErrorState message={error} onRetry={() => loadStudents(pagination.page)} className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 py-12" />
             ) : students.length === 0 ? (
-              <div className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500">
-                No students found matching your criteria.
-              </div>
+              <EmptyState 
+                title="No students found" 
+                message={search || statusFilter ? "No students match your current filters." : "You haven't added any students yet."}
+                className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 py-12"
+              />
             ) : (
               students.map((student) => (
                 <div key={student.id} className="bg-white dark:bg-[#0B1120] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4">

@@ -7,6 +7,7 @@ import {
 import { fetchAdminCourses } from '../../services/adminApi';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import AdminHeader from '../../components/admin/AdminHeader';
+import DataBoundary from '../../components/ui/DataBoundary';
 
 export default function AdminCourses() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -14,16 +15,19 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   const loadCourses = async (page = 1) => {
     setLoading(true);
+    setError(null);
     try {
       const result = await fetchAdminCourses({ page, limit: 10, search });
       setCourses(result.data);
       setPagination(result.pagination);
     } catch (err) {
       console.error(err);
+      setError(err.message || 'Failed to load courses');
     } finally {
       setLoading(false);
     }
@@ -98,17 +102,18 @@ export default function AdminCourses() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {loading ? (
+                  {loading || error || courses.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                        <span className="material-symbols-outlined text-blue-500 text-[32px] animate-spin mb-3">progress_activity</span>
-                        <p>Loading courses...</p>
-                      </td>
-                    </tr>
-                  ) : courses.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                        <p>No courses found matching your criteria.</p>
+                      <td colSpan="5">
+                        <DataBoundary 
+                          loading={loading} 
+                          error={error} 
+                          empty={courses.length === 0} 
+                          onRetry={() => loadCourses(pagination.page)}
+                          loadingMessage="Loading courses..."
+                          emptyTitle="No courses found"
+                          emptyMessage={search ? "No courses match your search." : "You haven't added any courses yet."}
+                        />
                       </td>
                     </tr>
                   ) : (

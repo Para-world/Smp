@@ -41,13 +41,21 @@ async function main() {
   
   // Super Admin & Admin
   await db.insert(users).values([
-    { name: "Super Admin", email: "superadmin@edusphere.com", role: "admin", passwordHash, isActive: true },
-    { name: "Admin User", email: "admin@edusphere.com", role: "admin", passwordHash, isActive: true }
+    { name: "Super Admin", email: "admin@edusphere.local", role: "admin", passwordHash, isActive: true },
+    { name: "Admin User", email: "admin2@edusphere.local", role: "admin", passwordHash, isActive: true }
   ]);
 
   // Faculty
-  const facultyUsers = await db.insert(users).values(
-    Array.from({ length: 5 }).map(() => ({
+  const facultyUsers = await db.insert(users).values([
+    {
+      name: "Demo Faculty",
+      email: "faculty@edusphere.local",
+      role: "faculty" as const,
+      passwordHash,
+      isActive: true,
+      phone: faker.phone.number({ style: 'national' }),
+    },
+    ...Array.from({ length: 4 }).map(() => ({
       name: faker.person.fullName(),
       email: faker.internet.email().toLowerCase(),
       role: "faculty" as const,
@@ -55,11 +63,19 @@ async function main() {
       isActive: true,
       phone: faker.phone.number({ style: 'national' }),
     }))
-  ).returning();
+  ]).returning();
 
   // Students
-  const studentUsers = await db.insert(users).values(
-    Array.from({ length: 20 }).map(() => ({
+  const studentUsers = await db.insert(users).values([
+    {
+      name: "Demo Student",
+      email: "student@edusphere.local",
+      role: "student" as const,
+      passwordHash,
+      isActive: true,
+      phone: faker.phone.number({ style: 'national' }),
+    },
+    ...Array.from({ length: 19 }).map(() => ({
       name: faker.person.fullName(),
       email: faker.internet.email().toLowerCase(),
       role: "student" as const,
@@ -67,7 +83,7 @@ async function main() {
       isActive: true,
       phone: faker.phone.number({ style: 'national' }),
     }))
-  ).returning();
+  ]).returning();
 
   // Student Profiles
   await db.insert(studentProfiles).values(

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Save, CheckCircle2, XCircle, 
   Clock, AlertTriangle, Calendar, Users
 } from 'lucide-react';
-import { fetchFacultyCourseRoster, submitFacultyAttendance } from '../../services/facultyApi';
+import { fetchFacultyCourseRoster, submitFacultyAttendance, fetchFacultyAttendance } from '../../services/facultyApi';
 
 // Note: To render properly in the app, this needs FacultySidebar and FacultyHeader 
 // Assuming similar components exist or we can use placeholders for now
@@ -21,26 +21,39 @@ export default function FacultyAttendanceMarking() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const loadRoster = async () => {
+    const loadRosterAndAttendance = async () => {
       setLoading(true);
       try {
-        const roster = await fetchFacultyCourseRoster(courseId);
+        const [roster, attendanceData] = await Promise.all([
+          fetchFacultyCourseRoster(courseId),
+          fetchFacultyAttendance(courseId, date)
+        ]);
+        
         setStudents(roster);
         
-        // Initialize records to 'present' by default
+        // Initialize records
         const initialRecords = {};
+        const attendanceMap = {};
+        
+        if (attendanceData && attendanceData.length > 0) {
+          attendanceData.forEach(record => {
+            attendanceMap[record.studentId] = record.status;
+          });
+        }
+        
         roster.forEach(s => {
-          initialRecords[s.studentId] = 'present';
+          initialRecords[s.studentId] = attendanceMap[s.studentId] || 'present';
         });
+        
         setAttendanceRecords(initialRecords);
       } catch (err) {
-        setError(err.message || 'Unable to load course roster');
+        setError(err.message || 'Unable to load attendance data');
       } finally {
         setLoading(false);
       }
     };
-    loadRoster();
-  }, [courseId]);
+    loadRosterAndAttendance();
+  }, [courseId, date]);
 
   const handleStatusChange = (studentId, status) => {
     setAttendanceRecords(prev => ({ ...prev, [studentId]: status }));

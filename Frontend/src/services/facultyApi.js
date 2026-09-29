@@ -65,6 +65,30 @@ export const submitFacultyAttendance = async (courseId, date, records) => {
   return response.json();
 };
 
+export const fetchFacultyAttendance = async (courseId, date) => {
+  const url = new URL(`${API_URL}/faculty/courses/${courseId}/attendance`);
+  if (date) url.searchParams.append('date', date);
+  const response = await fetch(url.toString(), {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch attendance');
+  }
+  return response.json();
+};
+
+export const fetchFacultyAttendanceSummary = async (courseId) => {
+  const response = await fetch(`${API_URL}/faculty/courses/${courseId}/attendance/summary`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to fetch attendance summary');
+  }
+  return response.json();
+};
+
 export const fetchFacultyAssignments = async () => {
   const response = await fetch(`${API_URL}/faculty/assignments`, {
     headers: getAuthHeaders(),

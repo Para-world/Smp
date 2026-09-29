@@ -107,7 +107,7 @@ export default function FacultyCourseDetail() {
             <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center py-12 text-slate-500">
               <ClipboardCheck size={48} className="mb-4 opacity-20" />
               <p>Attendance records and marking interface will be here.</p>
-              <Button onClick={() => navigate('/faculty/attendance')} variant="outline" className="mt-4">Go to Attendance Module</Button>
+              <Button onClick={() => navigate(`/faculty/courses/${courseId}/attendance`)} variant="outline" className="mt-4">Go to Attendance Module</Button>
             </div>
           </TabsContent>
 

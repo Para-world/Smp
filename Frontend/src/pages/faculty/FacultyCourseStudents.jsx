@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchFacultyCourseStudents } from '../../services/facultyApi';
+import { fetchFacultyCourseStudents, fetchFacultyAttendanceSummary } from '../../services/facultyApi';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 export default function FacultyCourseStudents({ courseId }) {
   const [students, setStudents] = useState([]);
+  const [attendanceSummary, setAttendanceSummary] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,8 +19,17 @@ export default function FacultyCourseStudents({ courseId }) {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const data = await fetchFacultyCourseStudents(courseId);
-      setStudents(data);
+      const [studentsData, summaryData] = await Promise.all([
+        fetchFacultyCourseStudents(courseId),
+        fetchFacultyAttendanceSummary(courseId)
+      ]);
+      setStudents(studentsData);
+      
+      const summaryMap = {};
+      summaryData.forEach(row => {
+        summaryMap[row.student_id] = row.percentage;
+      });
+      setAttendanceSummary(summaryMap);
     } catch (error) {
       toast.error('Failed to load students roster');
     } finally {
@@ -82,7 +92,13 @@ export default function FacultyCourseStudents({ courseId }) {
                   {student.email}
                 </TableCell>
                 <TableCell>
-                  <span className="text-slate-500 italic">--%</span>
+                  {attendanceSummary[student.studentId] !== undefined ? (
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {Number(attendanceSummary[student.studentId]).toFixed(1)}%
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 italic">--%</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="text-slate-500 italic">--/--</span>

@@ -260,6 +260,79 @@ router.post("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTEN
 });
 
 /**
+ * GET /api/faculty/courses/:courseId/attendance
+ * Get attendance records for a specific date
+ */
+router.get("/courses/:courseId/attendance", requirePermission(PERMISSIONS.ATTENDANCE_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const facultyId = req.user!.userId;
+    const dateStr = req.query.date as string;
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    let records = [];
+    if (dateStr) {
+      records = await db.select()
+        .from(attendance)
+        .where(and(
+          eq(attendance.courseId, courseId),
+          eq(attendance.date, dateStr)
+        ));
+    } else {
+      records = await db.select()
+        .from(attendance)
+        .where(eq(attendance.courseId, courseId));
+    }
+
+    res.json(records);
+  } catch (error) {
+    console.error("Error fetching attendance:", error);
+    res.status(500).json({ error: "Failed to load attendance records" });
+  }
+});
+
+/**
+ * GET /api/faculty/courses/:courseId/attendance/summary
+ * Get attendance percentage for all students in the course
+ */
+router.get("/courses/:courseId/attendance/summary", requirePermission(PERMISSIONS.ATTENDANCE_READ), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const facultyId = req.user!.userId;
+
+    // Verify course belongs to faculty
+    const [course] = await db.select().from(courses).where(and(eq(courses.id, courseId), eq(courses.facultyId, facultyId)));
+    if (!course) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
+    // Drizzle raw query to calculate percentage
+    const summary = await db.execute(sql`
+      SELECT 
+        student_id,
+        COUNT(*) as total_classes,
+        SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present_classes,
+        (SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0) * 100) as percentage
+      FROM attendance
+      WHERE course_id = ${courseId}
+      GROUP BY student_id
+    `);
+
+    res.json(summary.rows);
+  } catch (error) {
+    console.error("Error fetching attendance summary:", error);
+    res.status(500).json({ error: "Failed to load attendance summary" });
+  }
+});
+
+/**
  * POST /api/faculty/assignments
  * Create a new assignment
  */

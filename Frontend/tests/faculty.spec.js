@@ -20,6 +20,6 @@ test.describe('Faculty Workflows', () => {
 
   test('My Courses page', async ({ page }) => {
     await page.goto('/faculty/courses');
-    await expect(page.locator('h1')).toContainText('My Courses', { ignoreCase: true });
+    await expect(page.locator('h1').last()).toContainText('My Courses', { ignoreCase: true });
   });
 });

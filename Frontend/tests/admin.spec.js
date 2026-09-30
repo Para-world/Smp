@@ -53,12 +53,7 @@ test.describe('Admin Workflows', () => {
     // Wait for header to be visible
     await page.waitForSelector('header');
     
-    // Usually there's a user avatar/button to click
-    const userMenuButton = page.locator('button').filter({ hasText: 'AD' }).first();
-    if (await userMenuButton.isVisible()) {
-      await userMenuButton.click();
-      await page.click('text=Log out', { force: true });
-      await page.waitForURL('**/auth*');
-    }
+    await page.locator('button').filter({ hasText: 'Log out' }).first().click({ force: true });
+    await page.waitForURL('/');
   });
 });

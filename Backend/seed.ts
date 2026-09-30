@@ -5,14 +5,14 @@ import {
   classSchedules, assignments, submissions, exams, studentResults, announcements, attendance
 } from "./src/db/schema.js";
 import { faker } from "@faker-js/faker";
-import bcrypt from "bcrypt";
+import { hash as cryptoHash } from "./src/utils/crypto.js";
 import { eq } from "drizzle-orm";
 
 async function main() {
   console.log("🌱 Starting realistic seed process...");
 
   // Password for all seeded users
-  const passwordHash = await bcrypt.hash("Demo123!", 10);
+  const passwordHash = await cryptoHash("Demo123!");
 
   // 1. Create Core Config (Semesters, Departments, Programs)
   console.log("Creating core config...");
